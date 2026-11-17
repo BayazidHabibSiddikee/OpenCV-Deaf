@@ -1,20 +1,14 @@
-"""FastAPI sign-language teacher for Sipeed MaixSense-A075V."""
+"""Simple Sign Language Detection - Emotion + Hand Signs."""
 import os
 import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, FileResponse
 
 from camera import CameraProcessor
-from signs_to_text import (
-    AudioPipeline,
-    SpeechToText,
-    TextToSpeech,
-    LESSON_GESTURE_MAP,
-)
 
-app = FastAPI(title="Sign Language Teacher")
+app = FastAPI(title="Sign Language Detection")
 
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 template_dir = BASE_DIR / "templates"
@@ -28,32 +22,32 @@ LESSONS = [
     {"name": "OK", "emoji": "👌", "gesture": "OK", "hint": "Thumb and index touch", "dist": [0.4, 1.2]},
 ]
 
-camera_processor = CameraProcessor(
-    rgb_url="http://192.168.233.1/rgb",
-    depth_url="http://192.168.233.1/depth",
-)
-
 @app.on_event("startup")
 def _startup():
-    camera_processor.start()
+    pass
 
 @app.on_event("shutdown")
 def _shutdown():
-    camera_processor.stop()
+    pass
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return FileResponse(str(template_dir / "index.html"))
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory=template_dir)
+    return templates.TemplateResponse("index_minimal.html", {"request": request, "lessons": LESSONS})
 
 @app.get("/video_feed")
 async def video_feed():
     def generate():
         while True:
-            jpg = camera_processor.get_frame_jpeg()
+            jpg = CameraProcessor(
+                rgb_url="http://192.168.233.1/rgb",
+                depth_url="http://192.168.233.1/depth",
+            ).get_frame_jpeg()
             if jpg is None:
                 time.sleep(0.05)
                 continue
-            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+            yield (b"--frame\r\n\n" + jpg + b"\r\n")
             time.sleep(0.03)
 
     return StreamingResponse(generate(),
@@ -61,92 +55,10 @@ async def video_feed():
 
 @app.get("/gesture_data")
 async def gesture_data():
-    return camera_processor.get_data()
-
-# ==================== AUDIO PIPELINE ====================
-
-# Singleton audio pipeline used by both endpoints
-_audio_pipeline = AudioPipeline(
-    tts=TextToSpeech(),
-    stt=SpeechToText(),
-    current_sign="",
-)
-
-@app.post("/tts_audio")
-async def tts_audio(request: Request):
-    """Generate and return an audio file for the given text."""
-    body = await request.json()
-    text = body.get("text", "")
-    language = body.get("language", "en-US")
-    output_name = body.get("output_name", None)
-
-    if not text:
-        return {"error": "Missing 'text' field in request body."}
-
-    try:
-        _audio_pipeline.tts._backend = "gtts"
-        _audio_pipeline.tts.language = language
-    except Exception:
-        pass
-
-    try:
-        filepath = _audio_pipeline.tts.speak(text, filename=output_name)
-        ext = os.path.splitext(filepath)[1] or ".mp3"
-        content_type = (
-            "audio/mpeg" if ext == ".mp3" else "audio/wav" if ext == ".wav" else "application/octet-stream"
-        )
-        return FileResponse(filepath, media_type=content_type, filename=os.path.basename(filepath))
-    except Exception as e:
-        return {"error": f"TTS failed: {e}"}
-
-@app.post("/recognize_speech")
-async def recognize_speech(request: Request):
-    """Listen on the microphone and return transcribed text."""
-    body = await request.json()
-    language = body.get("language", "en-US")
-
-    try:
-        _audio_pipeline.stt.language = language
-        text = _audio_pipeline.recognize(timeout=5.0, phrase_limit=10.0)
-        return {"text": text}
-    except Exception as e:
-        return {"error": f"STT failed: {e}"}
-
-# ==================== GAMES DASHBOARD ====================
-GAMES = [
-    {
-        "id": "dino",
-        "title": "Chrome Dino Jumper",
-        "icon": "🦖",
-        "desc": "Control the Chrome dinosaur game. Open Palm=Jump, Fist=Duck, Peace=Click.",
-        "run": "python3 games/dino.py",
-    },
-    {
-        "id": "mouse",
-        "title": "Hand Mouse",
-        "icon": "🖱️",
-        "desc": "Your hand is the cursor. Peace=left-click, Fist=right-click, thumbs=scroll.",
-        "run": "python3 games/mouse.py",
-    },
-    {
-        "id": "pong",
-        "title": "Hand Pong",
-        "icon": "🏓",
-        "desc": "Move paddle with hand height, Peace gesture to launch ball.",
-        "run": "python3 games/pong.py",
-    },
-    {
-        "id": "type",
-        "title": "Gesture Typer",
-        "icon": "⌨️",
-        "desc": "Hold gestures to type letters into any focused text field.",
-        "run": "python3 games/type_gesture.py",
-    },
-]
-
-@app.get("/games", response_class=HTMLResponse)
-async def games_dashboard(request: Request):
-    return FileResponse(str(template_dir / "games.html"))
+    return CameraProcessor(
+        rgb_url="http://192.168.233.1/rgb",
+        depth_url="http://192.168.233.1/depth",
+    ).get_data()
 
 if __name__ == "__main__":
     import uvicorn

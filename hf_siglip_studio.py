@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-MaixSense-A075V + Hugging Face SigLIP-2 (3.5GB) Multi-Hand & Emotion Vision Studio
-- Hugging Face Zero-Shot Vision Engine (google/siglip2-so400m-patch14-384, ~3.5GB):
+MaixSense-A075V + Hugging Face SigLIP-2 Multi-Hand & Emotion Vision Studio
+- Hugging Face Zero-Shot Vision Engine (google/siglip2-so400m-patch14-384):
     * Classifies 14+ expressive hand symbols (Fuck Off, Hi/Hello, Rock/Horns, I Love You, etc.)
     * Classifies 8 real-life facial emotions (Happy, Angry, Surprised, Sad, Laughing, etc.)
 - MediaPipe 21-Landmark 3D Engine (up to 4 hands simultaneously):
-    * Sub-pixel Pinch-to-Draw (touch Thumb + Index tips together to draw at their midpoint)
+    * Real-time 3D skeleton and joints for every hand
 - Sipeed MaixSense-A075V ToF Depth Sensor:
     * Real-time metric distance (m & mm) for every hand and your face/body
 """
@@ -68,7 +68,7 @@ HAND_EDGES = (
 GESTURE_PROMPTS = {
     "Hi / Hello": "a close-up photo of an open human hand with all five fingers spread wide waving hello",
     "Fuck Off": "a close-up photo of a human hand raising only the middle finger upward in an offensive gesture with other fingers curled down",
-    "Fist [ERASE]": "a close-up photo of a tightly closed human fist with all fingers curled into the palm",
+    "Fist": "a close-up photo of a tightly closed human fist with all fingers curled into the palm",
     "Peace / Victory": "a close-up photo of a human hand making a V peace sign with index and middle fingers raised",
     "Rock / Horns": "a close-up photo of a human hand making the rock and roll devil horns sign with index and pinky fingers raised",
     "I Love You": "a close-up photo of a human hand making the I love you sign with thumb, index, and pinky fingers extended",
@@ -337,12 +337,11 @@ def crop_hand_pil(bgr_frame, lm_list, pad_ratio=0.30):
     return Image.fromarray(crop_rgb)
 
 
-def extract_pinch_and_fallback_gesture(lm_list, vw, vh):
+def extract_palm_and_fallback_gesture(lm_list, vw, vh):
     pts = np.array([[l.x, l.y] for l in lm_list], dtype=np.float32)
     wrist = pts[0]
     middle_mcp = pts[9]
     pinky_mcp = pts[17]
-    palm_scale = max(float(np.linalg.norm(middle_mcp - wrist)), 1e-4)
 
     tips = [4, 8, 12, 16, 20]
     pips = [3, 6, 10, 14, 18]
@@ -354,45 +353,40 @@ def extract_pinch_and_fallback_gesture(lm_list, vw, vh):
     thumb, index, middle, ring, pinky = states
     count = sum(states)
 
-    pinch_ratio = float(np.linalg.norm(pts[4] - pts[8])) / palm_scale
-    index_extended_from_palm = np.linalg.norm(pts[8] - wrist) > np.linalg.norm(pts[5] - wrist) * 1.08
-    is_pinching = (pinch_ratio < 0.28) and (index_extended_from_palm or middle or ring or pinky)
-
-    draw_pt = (
-        int(((pts[4][0] + pts[8][0]) * 0.5) * vw),
-        int(((pts[4][1] + pts[8][1]) * 0.5) * vh),
-    )
     palm_pt = (
         int(((pts[0][0] + pts[5][0] + pts[17][0]) / 3.0) * vw),
         int(((pts[0][1] + pts[5][1] + pts[17][1]) / 3.0) * vh),
     )
 
-    if is_pinching:
-        fallback = "Pinch [DRAWING]"
-    elif middle and not index and not ring and not pinky:
+    if middle and not index and not ring and not pinky:
         fallback = "Fuck Off"
     elif count == 0:
-        fallback = "Fist [ERASE]"
+        fallback = "Fist"
     elif count == 5:
         fallback = "Hi / Hello"
     elif index and middle and not ring and not pinky:
         fallback = "Peace / Victory"
+    elif thumb and index and not middle and not ring and pinky:
+        fallback = "I Love You"
+    elif index and not middle and not ring and pinky:
+        fallback = "Rock / Horns"
+    elif thumb and not index and not middle and not ring and not pinky:
+        fallback = "Yes / Like"
     else:
         fallback = f"{count} Fingers"
 
-    return is_pinching, draw_pt, palm_pt, fallback
+    return palm_pt, fallback
 
 
 # ==================== MAIN STUDIO APPLICATION ====================
 
 def main():
     print("=================================================================")
-    print(" MaixSense-A075V + Hugging Face SigLIP-2 (3.5GB) Vision Studio")
-    print(" Controls:")
-    print("   Touch Thumb + Index  -> DRAW smooth neon lines at midpoint")
-    print("   Separate Fingers     -> HOVER cursor (no ink)")
-    print("   Closed Fist          -> ERASE canvas")
-    print("   Hotkeys: [d]Draw On/Off  [c]Clear  [g]2H-Game  [m]Flip  [q]Quit")
+    print(" MaixSense-A075V + Hugging Face SigLIP-2 Vision Studio")
+    print(" Features:")
+    print("   14+ Expressive Zero-Shot Hand Gestures & Sign Recognition")
+    print("   Facial Emotion Recognition & ToF Metric Distance")
+    print("   Hotkeys: [g]2H-Game  [m]Flip  [q]Quit")
     print("=================================================================")
 
     hf_worker = HuggingFaceVisionWorker(HF_MODEL_ID)
@@ -412,13 +406,9 @@ def main():
 
     init_camera()
 
-    draw_enabled = True
     game_enabled = False
     mirror = True
 
-    canvas_layer = None
-    smooth_pts = {}
-    prev_draw_pts = {}
     last_game_action = 0.0
     last_ts_ms = 0
     prev_time = time.time()
@@ -439,8 +429,6 @@ def main():
                     depth = cv2.flip(depth, 1)
 
             vh, vw = rgb.shape[:2]
-            if canvas_layer is None or canvas_layer.shape[:2] != (vh, vw):
-                canvas_layer = np.zeros_like(rgb)
 
             raw_depth = depth
             depth_resized = (
@@ -490,12 +478,10 @@ def main():
                     side = "Hand"
                     if mp_res.handedness and idx < len(mp_res.handedness):
                         side = mp_res.handedness[idx][0].category_name
-                    is_pinching, draw_pt, palm_pt, fallback_g = extract_pinch_and_fallback_gesture(lm_list, vw, vh)
+                    palm_pt, fallback_g = extract_palm_and_fallback_gesture(lm_list, vw, vh)
                     dist_m = sample_distance_m(depth_resized, palm_pt[0], palm_pt[1], r=6)
                     hands_list.append({
                         "side": side,
-                        "is_pinching": is_pinching,
-                        "draw_pt": draw_pt,
                         "palm": palm_pt,
                         "fallback": fallback_g,
                         "dist_m": dist_m,
@@ -523,18 +509,12 @@ def main():
                     emo_txt += f" | {person_dist_m:.2f}m"
                 cv2.putText(output, emo_txt, (fx, max(20, fy - 8)), cv2.FONT_HERSHEY_DUPLEX, 0.55, (255, 110, 255), 1)
 
-            # 4. Render Hands, HF Labels, & Pinch-to-Draw Canvas
-            active_slots = set()
+            # 4. Render Hands & HF Classification Labels
             for idx, h in enumerate(hands_list):
-                active_slots.add(idx)
                 _, h_color = HAND_PALETTE[idx % len(HAND_PALETTE)]
                 palm_pt = h["palm"]
-                draw_pt = h["draw_pt"]
 
-                if h["is_pinching"]:
-                    gesture = "Pinch [DRAWING]"
-                    conf_str = ""
-                elif idx in hf_hand_preds and hf_hand_preds[idx][1] >= 0.22:
+                if idx in hf_hand_preds and hf_hand_preds[idx][1] >= 0.22:
                     lbl, conf = hf_hand_preds[idx]
                     gesture = lbl
                     conf_str = f" {int(conf * 100)}%"
@@ -549,44 +529,12 @@ def main():
                     cv2.line(output, pts[a], pts[b], h_color, 2, cv2.LINE_AA)
                 for p in pts:
                     cv2.circle(output, p, 3, (255, 255, 255), -1)
-                cv2.circle(output, pts[4], 6, (0, 255, 255), -1)
-                cv2.circle(output, pts[8], 6, (0, 255, 255), -1)
 
                 tag = f"H{h['id']} ({h['side']}): {gesture}{conf_str}"
                 if h["dist_m"]:
                     tag += f" | {h['dist_m']:.2f}m"
                 cv2.putText(output, tag, (max(8, palm_pt[0] - 80), max(24, palm_pt[1] - 25)),
                             cv2.FONT_HERSHEY_DUPLEX, 0.52, h_color, 1)
-
-                if draw_enabled:
-                    if idx not in smooth_pts:
-                        smooth_pts[idx] = np.array(draw_pt, dtype=np.float32)
-                    else:
-                        smooth_pts[idx] = 0.65 * np.array(draw_pt, dtype=np.float32) + 0.35 * smooth_pts[idx]
-                    cur_pt = (int(smooth_pts[idx][0]), int(smooth_pts[idx][1]))
-
-                    if h["is_pinching"]:
-                        cv2.circle(output, cur_pt, 9, h_color, -1)
-                        cv2.circle(output, cur_pt, 13, (255, 255, 255), 2)
-                        if idx in prev_draw_pts and prev_draw_pts[idx] is not None:
-                            cv2.line(canvas_layer, prev_draw_pts[idx], cur_pt, h_color, 5, cv2.LINE_AA)
-                        prev_draw_pts[idx] = cur_pt
-                    elif "Fist" in gesture:
-                        cv2.circle(output, palm_pt, 30, (0, 0, 255), 2)
-                        cv2.circle(canvas_layer, palm_pt, 30, (0, 0, 0), -1)
-                        prev_draw_pts[idx] = None
-                    else:
-                        cv2.circle(output, cur_pt, 7, (210, 210, 210), 1)
-                        prev_draw_pts[idx] = None
-
-            for old_idx in list(prev_draw_pts.keys()):
-                if old_idx not in active_slots:
-                    prev_draw_pts.pop(old_idx, None)
-                    smooth_pts.pop(old_idx, None)
-
-            c_gray = cv2.cvtColor(canvas_layer, cv2.COLOR_BGR2GRAY)
-            _, c_mask = cv2.threshold(c_gray, 5, 255, cv2.THRESH_BINARY)
-            output[c_mask > 0] = cv2.addWeighted(output, 0.25, canvas_layer, 0.75, 0)[c_mask > 0]
 
             # 5. Two-Hand Game Controller Mode
             if game_enabled and HAS_PYAUTOGUI and hands_list:
@@ -609,7 +557,7 @@ def main():
                             if "Hi" in g or "Stop" in g:
                                 pyautogui.press("space")
                                 last_game_action = now
-                            elif h["is_pinching"]:
+                            elif "Point" in g:
                                 pyautogui.click()
                                 last_game_action = now
 
@@ -651,31 +599,23 @@ def main():
             emo_str = f"{hf_emo} ({int(hf_emo_conf * 100)}%)" if hf_emo else "No Face Detected"
             cv2.putText(panel, f"HF EMOTION: {emo_str}", (16, 232), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 120, 255), 1)
 
-            cv2.putText(panel, f"PINCH-DRAW[d]: {'ON' if draw_enabled else 'OFF'}", (16, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.43, (0, 240, 255) if draw_enabled else (110, 110, 110), 1)
-            cv2.putText(panel, f"2H-GAME[g]: {'ON' if game_enabled else 'OFF'}", (200, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.43, (60, 255, 120) if game_enabled else (110, 110, 110), 1)
+            cv2.putText(panel, f"2H-GAME[g]: {'ON' if game_enabled else 'OFF'}", (16, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.43, (60, 255, 120) if game_enabled else (110, 110, 110), 1)
 
-            tw, th, ty = 160, 102, 290
-            cv2.putText(panel, "TOF DEPTH MAP", (16, 283), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (0, 200, 255), 1)
+            tw, th, ty = 336, 170, 280
+            cv2.putText(panel, "3D TOF DEPTH MAP (LIVE METRIC)", (16, 273), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (0, 200, 255), 1)
             if raw_depth is not None:
                 dn = np.clip(raw_depth, 100, 2000) if raw_depth.dtype == np.uint16 else raw_depth
                 if raw_depth.dtype == np.uint16:
                     dn = ((dn - 100) / 1900.0 * 255).astype(np.uint8)
                 panel[ty : ty + th, 16 : 16 + tw] = cv2.resize(cv2.applyColorMap(dn, cv2.COLORMAP_JET), (tw, th))
 
-            cv2.putText(panel, "PINCH AIR CANVAS", (192, 283), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (0, 200, 255), 1)
-            panel[ty : ty + th, 192 : 192 + tw] = cv2.resize(canvas_layer, (tw, th))
-
-            cv2.putText(panel, f"VIDEO FPS: {fps:.1f} | [c]Clear [m]Flip [q]Quit",
-                        (16, 458), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (165, 165, 180), 1)
+            cv2.putText(panel, f"VIDEO FPS: {fps:.1f} | [g]Game [m]Flip [q]Quit",
+                        (16, 465), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (165, 165, 180), 1)
 
             cv2.imshow(win_name, ui)
             k = cv2.waitKey(1) & 0xFF
             if k == ord("q"):
                 break
-            elif k == ord("c"):
-                canvas_layer[:] = 0
-            elif k == ord("d"):
-                draw_enabled = not draw_enabled
             elif k == ord("g"):
                 game_enabled = not game_enabled
             elif k == ord("m"):
