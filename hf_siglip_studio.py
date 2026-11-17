@@ -47,11 +47,7 @@ CAMERA_HOST = "http://192.168.233.1"
 HTTP_SESSION = requests.Session()
 
 # Hugging Face SigLIP model ID
-# Options:
-#   "google/siglip-base-patch16-224"      (~800 MB, fast CPU inference, reliable download)
-#   "google/siglip2-base-patch16-224"     (~1.5 GB, newer SigLIP2 architecture)
-#   "google/siglip2-so400m-patch14-384"   (~3.5 GB flagship, requires high RAM)
-HF_MODEL_ID = os.getenv("HF_SIGLIP_MODEL", "google/siglip-base-patch16-224")
+HF_MODEL_ID = os.getenv("HF_SIGLIP_MODEL", "google/siglip2-so400m-patch14-384")
 
 HAND_PALETTE = [
     ("Cyan", (255, 240, 0)),
@@ -128,7 +124,10 @@ class HuggingFaceVisionWorker:
                 truncation=True,
                 return_tensors="pt",
             ).to(self.device)
-            g_emb = self.model.get_text_features(**g_in)
+            g_out = self.model.get_text_features(**g_in)
+            g_emb = getattr(g_out, "pooler_output", g_out)
+            if hasattr(g_emb, "last_hidden_state"):
+                g_emb = g_emb.last_hidden_state[:, 0]
             self.gesture_embeds = g_emb / g_emb.norm(p=2, dim=-1, keepdim=True)
 
             e_in = self.processor(
@@ -137,7 +136,10 @@ class HuggingFaceVisionWorker:
                 truncation=True,
                 return_tensors="pt",
             ).to(self.device)
-            e_emb = self.model.get_text_features(**e_in)
+            e_out = self.model.get_text_features(**e_in)
+            e_emb = getattr(e_out, "pooler_output", e_out)
+            if hasattr(e_emb, "last_hidden_state"):
+                e_emb = e_emb.last_hidden_state[:, 0]
             self.emotion_embeds = e_emb / e_emb.norm(p=2, dim=-1, keepdim=True)
 
         print(f"[HF] Ready! RAM footprint ~3.5GB. Zero-shot prompts active.")
@@ -192,7 +194,10 @@ class HuggingFaceVisionWorker:
                     inputs["pixel_values"] = inputs["pixel_values"].to(torch.float16)
 
                 with torch.no_grad():
-                    img_emb = self.model.get_image_features(**inputs)
+                    img_out = self.model.get_image_features(**inputs)
+                    img_emb = getattr(img_out, "pooler_output", img_out)
+                    if hasattr(img_emb, "last_hidden_state"):
+                        img_emb = img_emb.last_hidden_state[:, 0]
                     img_emb = img_emb / img_emb.norm(p=2, dim=-1, keepdim=True)
                     scale = self.model.logit_scale.exp()
                     bias = self.model.logit_bias
