@@ -57,10 +57,11 @@ def _shutdown():
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "lessons": LESSONS,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"lessons": LESSONS}
+    )
 
 
 @app.get("/video_feed")
