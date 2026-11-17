@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Gesture Games - Play games using sign language with accessibility features for deaf, dumb, and hard-of-hearing users.">
+<title>Games - Sign Language Teacher</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-body: #0b1120;
+  --bg-card: #172238;
+  --border-color: #334155;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --accent-cyan: #22d3ee;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  line-height: 1.6;
+  padding: 20px;
+}
+body.high-contrast {
+  --bg-body: #000;
+  --bg-card: #111;
+  --border-color: #fff;
+  --text-primary: #fff;
+  --text-secondary: #ccc;
+  --accent-cyan: #fff;
+  --accent-blue: #ffd700;
+  --accent-purple: #ffd700;
+}
+body.high-contrast header h1 { color: #fff; }
+body.high-contrast .card:hover { border-color: #fff; }
+header { text-align: center; margin-bottom: 24px; }
+header h1 { color: var(--accent-cyan); margin-bottom: 6px; }
+header p { color: var(--text-secondary); font-size: 0.95rem; }
+.container { max-width: 800px; margin: 0 auto; display: grid; gap: 16px; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.card:hover { border-color: var(--accent-cyan); }
+.card:focus-within { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); }
+.icon { font-size: 3rem; }
+.info h2 { color: var(--accent-cyan); margin-bottom: 4px; font-size: 1.25rem; }
+.info p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px; }
+button {
+  background: var(--accent-cyan); color: #051525;
+  border: none; padding: 10px 18px; border-radius: 8px;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+button:hover { background: #67e8f9; }
+button:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.back {
+  display: inline-block; margin-top: 12px; color: var(--accent-blue);
+  text-decoration: none;
+}
+.back:hover { text-decoration: underline; }
+.kbd {
+  background: #334155; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.85rem; font-family: monospace; color: #a5f3fc;
+}
+.skip-link {
+  position: absolute; top: -100%; left: 0;
+  background: #fff; color: #000; padding: 8px 16px; z-index: 100;
+}
+.skip-link:focus { top: 0; }
+.access-controls {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+.access-controls .control-group { margin-right: 8px; }
+.access-controls label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; }
+.access-controls select,
+.access-controls button {
+  background: #0b1120; color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 0.95rem;
+}
+.access-controls select:focus,
+.access-controls button:focus-visible {
+  outline: 2px solid var(--accent-cyan); outline-offset: 2px;
+}
+.font-size-btn {
+  background: #0b1120; color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 6px 10px;
+  font-size: 0.9rem; cursor: pointer;
+}
+.font-size-btn.active { background: var(--accent-cyan); color: #051525; border-color: var(--accent-cyan); }
+.font-size-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .card { flex-direction: column; align-items: flex-start; }
+  .access-controls { flex-wrap: wrap; gap: 8px; }
+  .access-controls .control-label { display: block; margin-bottom: 4px; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header>
+  <h1>Games</h1>
+  <p>Sign Language Teacher | Play games using gestures</p>
+  <nav class="access-controls no-print" aria-label="Accessibility controls">
+    <div class="control-group">
+      <span class="control-label">Font Size</span>
+      <button id="fontSizeToggle" class="font-size-btn" aria-pressed="false" aria-label="Toggle font size">Normal</button>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Language</span>
+      <select id="languageSelect" aria-label="Select sign language">
+        <option value="en">ASL / English</option>
+        <option value="en-gb">BSL / English</option>
+        <option value="en-in">ISL / English</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Vibration</span>
+      <button id="vibrationToggle" class="font-size-btn" aria-pressed="true" aria-label="Toggle haptic feedback">On</button>
+    </div>
+  </nav>
+</header>
+<main id="main-content" tabindex="-1">
+<div class="container">
+
+<div class="card">
+    <div class="icon" aria-hidden="true">&#x1F996;</div>
+    <div class="info">
+      <h2 id="game-title-dino">Chrome Dino Jumper</h2>
+      <p id="game-desc-dino">Control the Chrome dinosaur game. Open Palm=Jump, Fist=Duck, Peace=Click.</p>
+      <div style="margin-top:8px;">
+        <span class="kbd">Run locally:</span>
+        <code id="game-run-dino" style="color:#fbbf24;">python3 games/dino.py</code>
+      </div>
+      <button id="dino-btn" onclick="copyRun('python3 games/dino.py')" aria-label="Launch Chrome Dino Jumper" tabindex="0">Launch</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon" aria-hidden="true">&#x1F531;&#xFE0F;</div>
+    <div class="info">
+      <h2 id="game-title-mouse">Hand Mouse</h2>
+      <p id="game-desc-mouse">Your hand is the cursor. Peace=left-click, Fist=right-click, thumbs=scroll.</p>
+      <div style="margin-top:8px;">
+        <span class="kbd">Run locally:</span>
+        <code id="game-run-mouse" style="color:#fbbf24;">python3 games/mouse.py</code>
+      </div>
+      <button id="mouse-btn" onclick="copyRun('python3 games/mouse.py')" aria-label="Launch Hand Mouse" tabindex="0">Launch</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon" aria-hidden="true">&#x1F3D3;</div>
+    <div class="info">
+      <h2 id="game-title-pong">Hand Pong</h2>
+      <p id="game-desc-pong">Move paddle with hand height, Peace gesture to launch ball.</p>
+      <div style="margin-top:8px;">
+        <span class="kbd">Run locally:</span>
+        <code id="game-run-pong" style="color:#fbbf24;">python3 games/pong.py</code>
+      </div>
+      <button id="pong-btn" onclick="copyRun('python3 games/pong.py')" aria-label="Launch Hand Pong" tabindex="0">Launch</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon" aria-hidden="true">&#x2328;</div>
+    <div class="info">
+      <h2 id="game-title-type">Gesture Typer</h2>
+      <p id="game-desc-type">Hold gestures to type letters into any focused text field.</p>
+      <div style="margin-top:8px;">
+        <span class="kbd">Run locally:</span>
+        <code id="game-run-type" style="color:#fbbf24;">python3 games/type_gesture.py</code>
+      </div>
+      <button id="type-btn" onclick="copyRun('python3 games/type_gesture.py')" aria-label="Launch Gesture Typer" tabindex="0">Launch</button>
+    </div>
+  </div>
+</div>
+<p class="no-print" style="text-align:center;color:#64748b;margin-top:24px;">
+  Games run as local Python scripts using pyautogui. They control your actual keyboard/mouse, so run them on the same machine as the camera.
+  <strong>Failsafe:</strong> fling your mouse to any screen corner to abort pyautogui.
+</p>
+</main>
+<footer>
+  <p><a href="/" class="back">&#x2190; Back to lessons</a></p>
+</footer>
+<script>
+function copyRun(cmd) {
+  navigator.clipboard.writeText("cd /home/bayaz/Documents/OpenCV/sign_app\n" + cmd);
+  alert("Copied to clipboard:\n" + cmd);
+}
+const LANGUAGE_MAP = {
+  en: { name: "ASL / English" },
+  "en-gb": { name: "BSL / English" },
+  "en-in": { name: "ISL / English" }
+};
+const state = { currentLanguage: "en", vibration: true, fontSize: "normal" };
+const els = {
+  fontSizeToggle: document.getElementById("fontSizeToggle"),
+  languageSelect: document.getElementById("languageSelect"),
+  vibrationToggle: document.getElementById("vibrationToggle")
+};
+function applyFontSize(size) {
+  state.fontSize = size;
+  document.body.className = document.body.className.replace(/font-\w+/g, "");
+  if (size === "large") document.body.classList.add("font-large");
+  else if (size === "xlarge") document.body.classList.add("font-xlarge");
+  els.fontSizeToggle.textContent = size === "large" ? "Large" : size === "xlarge" ? "Extra Large" : "Normal";
+}
+function applyLanguage(lang) {
+  state.currentLanguage = lang;
+  els.languageSelect.value = lang;
+}
+function toggleVibration(on) {
+  state.vibration = on;
+  els.vibrationToggle.textContent = on ? "On" : "Off";
+}
+function init() {
+  const savedLang = localStorage.getItem("slt_language") || "en";
+  const savedSize = localStorage.getItem("slt_fontSize") || "normal";
+  const savedVib = localStorage.getItem("slt_vibration") !== "false";
+  applyLanguage(savedLang);
+  applyFontSize(savedSize);
+  toggleVibration(savedVib);
+  els.fontSizeToggle.addEventListener("click", () => {
+    const sizes = ["normal", "large", "xlarge"];
+    const next = sizes[(sizes.indexOf(state.fontSize) + 1) % sizes.length];
+    applyFontSize(next);
+  });
+  els.languageSelect.addEventListener("change", (e) => applyLanguage(e.target.value));
+  els.vibrationToggle.addEventListener("click", () => toggleVibration(!state.vibration));
+}
+init();
+</script>
+</body>
+</html>

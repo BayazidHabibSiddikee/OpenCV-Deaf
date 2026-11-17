@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+opencv-python
+numpy
+requests
+mediapipe
+jinja2
+pyautogui
+speechrecognition
+gtts
+sounddevice
