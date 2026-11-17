@@ -13,6 +13,7 @@ MaixSense-A075V + Hugging Face SigLIP-2 (3.5GB) Multi-Hand & Emotion Vision Stud
 import os
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
 import time
 import struct
@@ -45,8 +46,12 @@ from mediapipe.tasks.python import vision as mp_vision
 CAMERA_HOST = "http://192.168.233.1"
 HTTP_SESSION = requests.Session()
 
-# ~3.5 GB flagship SigLIP-2 model (change to "google/siglip2-base-patch16-224" for ~1.5 GB)
-HF_MODEL_ID = "google/siglip2-so400m-patch14-384"
+# Hugging Face SigLIP model ID
+# Options:
+#   "google/siglip-base-patch16-224"      (~800 MB, fast CPU inference, reliable download)
+#   "google/siglip2-base-patch16-224"     (~1.5 GB, newer SigLIP2 architecture)
+#   "google/siglip2-so400m-patch14-384"   (~3.5 GB flagship, requires high RAM)
+HF_MODEL_ID = os.getenv("HF_SIGLIP_MODEL", "google/siglip-base-patch16-224")
 
 HAND_PALETTE = [
     ("Cyan", (255, 240, 0)),
