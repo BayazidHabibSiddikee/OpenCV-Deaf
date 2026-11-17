@@ -1,57 +1,102 @@
-# OpenCV-Deaf & MaixSense-A075V AI Vision Suite
+# OpenCV-Deaf & SignFrame AI Vision Suite
 
-Real-time sign language recognition, 3D hand tracking, metric depth distance estimation, and expressive gesture control designed for the **Sipeed MaixSense-A075V** RGB-D Time-of-Flight (ToF) camera module.
+Unified Computer Vision & Deep Learning suite for American Sign Language (ASL) fingerspelling, 3D hand tracking, metric depth estimation, and expressive gesture communication. Designed for standard webcams and the **Sipeed MaixSense-A075V** RGB-D Time-of-Flight (ToF) camera module.
 
-## Features
+---
 
-- **3D ToF Depth Foreground Isolation:** Locks onto hands in 3D millimeters (10 cm – 1.8 m), completely eliminating background bleed (walls, furniture, curtains).
-- **Expressive 14-Gesture Classifier:** Real-time recognition of `Hi / Hello`, `Pinch [DRAWING]`, `Fist [ERASE]`, `Peace / Victory`, `Rock / Horns`, `I Love You`, `Call Me`, `Yes / Like`, `No / Dislike`, and more.
-- **Pinch-to-Draw Canvas:** Smooth air-drawing triggered when the thumb tip and index tip touch, complete with EMA trajectory smoothing.
-- **Face & Emotion Detection:** Lightweight YuNet face detector + FER+ emotion recognition with face/body metric distance telemetry.
-- **Sign Language Learning Web App:** FastAPI web interface with interactive sign lessons, speech-to-text, and TTS feedback.
-- **Game Controller:** Low-latency PyAutoGUI integration for gesture-controlled games (Dino, Pong, Mouse cursor, Gesture Typer).
+## 🌟 Core Features & Modules
 
-## Repository Structure
+### 1. SignFrame AI (ASL Fingerspelling & Speech)
+- **24 Static ASL Letters:** Real-time fingerspelling recognition powered by a custom PyTorch CNN (`models/feedback_candidate.pth`).
+- **Prediction Stabilization:** Temporal smoothing across frames before letter confirmation to prevent flickering.
+- **Text Composition & TTS:** Build words and sentences live, edit messages, and read aloud using Text-to-Speech.
+- **Run Webcam App:**
+  ```bash
+  python3 src/webcam_app.py
+  ```
+
+### 2. MaixSense-A075V 3D ToF Vision Studios
+- **3D Depth Foreground Isolation:** Locks onto hands in 3D millimeters (10 cm – 1.8 m), completely eliminating background bleed (walls, furniture, curtains).
+- **Hugging Face SigLIP-2 Zero-Shot Recognition:** Flagship vision-language model (`google/siglip2-so400m-patch14-384`) classifying 14+ expressive gestures and 8 real-life facial emotions.
+- **Multi-Hand 3D Engine:** Tracks 1 to 4 hands simultaneously using MediaPipe 21 3D landmarks with real-time metric distance telemetry.
+- **FastAPI Web Teacher:** Interactive sign language learning web app with live camera feed and scoring.
+
+---
+
+## 📁 Repository Structure
 
 ```text
-├── a075v_vision_studio.py     # All-in-One AI Vision Studio (Draw + Emotion + Games + Depth)
-├── multi_hand_studio.py       # Multi-Hand (1-4 hands) Expressive Gesture & Pinch-Draw Studio
-├── hand_gesture_depth.py      # Standalone 3D Depth Hand Gesture & Distance Monitor
-├── hand_gesture_mediapipe.py  # MediaPipe Hand Landmark Detector
-├── hf_siglip_studio.py        # Hugging Face SigLIP-2 Zero-Shot Gesture & Emotion Studio
-└── sign_app/                  # FastAPI Sign Language Teacher Web Application
-    ├── camera.py              # A075V packet decoder & processing pipeline
-    ├── emotion_detector.py    # YuNet + FER+ ONNX runtime emotion detector
-    ├── main.py                # FastAPI server endpoints
-    ├── games/                 # Gesture games (dino, mouse, pong, typing)
-    └── templates/             # Web UI templates
+OpenCV/
+├── src/                        # SignFrame AI core modules
+│   ├── webcam_app.py           # Main interactive ASL fingerspelling & TTS app
+│   ├── model.py                # PyTorch CNN architecture for ASL
+│   ├── inference.py            # Real-time inference engine
+│   ├── hand_tracker.py         # MediaPipe hand tracking & cropping
+│   ├── stabilizer.py           # Temporal prediction smoothing
+│   ├── text_composer.py        # Sentence builder & message editing
+│   ├── communication.py        # Text-to-Speech (TTS) integration
+│   ├── preprocessing.py        # Grayscale & 28x28 normalization
+│   ├── dataset.py              # Dataset loading & PyTorch DataLoaders
+│   ├── train.py                # Training & fine-tuning pipeline
+│   ├── evaluate.py             # Evaluation & confusion matrix generator
+│   └── visualizer.py           # Frame annotations & UI overlay
+│
+├── models/
+│   └── feedback_candidate.pth  # Pretrained ASL CNN checkpoint (24 classes)
+│
+├── hf_siglip_studio.py         # Hugging Face SigLIP-2 (3.5GB) Zero-Shot Gesture & Emotion Studio
+├── multi_hand_studio.py        # Multi-Hand (1-4 hands) 3D Studio + ToF Depth Telemetry
+├── a075v_vision_studio.py      # All-in-One Vision Studio with ToF Depth Isolation
+├── hand_gesture_depth.py       # Standalone 3D Depth Hand Gesture & Distance Monitor
+├── hand_gesture_mediapipe.py   # MediaPipe 3D Landmark Demo
+│
+├── sign_app/                   # FastAPI Sign Language Teacher Web Application
+│   ├── camera.py               # A075V composite binary packet decoder & depth slicer
+│   ├── emotion_detector.py     # YuNet + FER+ emotion classifier
+│   └── main.py                 # FastAPI backend endpoints
+│
+├── docs/
+│   └── PROJECT_SPEC.md         # SignFrame AI technical specification
+├── results/                    # Confusion matrices and evaluation metrics
+└── requirements.txt            # Python dependencies
 ```
 
-## Quick Start
+---
 
-### 1. Requirements
-Ensure your Python environment has OpenCV, NumPy, MediaPipe, and Requests installed:
+## 🚀 Quick Start
+
+### 1. Environment Setup
+Install the dependencies inside your Python environment:
 ```bash
-pip install opencv-contrib-python mediapipe numpy requests onnxruntime pyautogui
+pip install -r requirements.txt
+pip install opencv-contrib-python mediapipe requests onnxruntime pyautogui
 ```
 
-### 2. Camera Setup
-Connect the Sipeed MaixSense-A075V via USB. The device creates an RNDIS virtual network interface at `192.168.233.1`. Assign your host machine an IP in the same subnet (e.g., `192.168.233.100/24`).
+### 2. Running Applications
 
-### 3. Run Applications
+#### A. ASL Fingerspelling & Text-to-Speech (Webcam)
+```bash
+python3 src/webcam_app.py
+```
+- Hold an ASL hand sign in front of your camera.
+- The stabilized prediction confirms letters into the message box.
+- Press **Space** for spaces, **Backspace** to delete, and **Enter/Speak** to vocalize.
 
-**Multi-Hand Expressive Studio:**
+#### B. Hugging Face SigLIP-2 Vision Studio (A075V / ToF Camera)
+```bash
+python3 hf_siglip_studio.py
+```
+- Recognizes 14+ expressive gestures and 8 facial emotions zero-shot.
+- Metric millimeter depth estimation on your hands and body.
+
+#### C. Multi-Hand 3D Studio (MediaPipe + Depth)
 ```bash
 python3 multi_hand_studio.py
 ```
 
-**Vision Studio (Hand + Air Draw + Emotion + Games):**
-```bash
-python3 a075v_vision_studio.py
-```
-
-**FastAPI Sign Language Teacher:**
+#### D. FastAPI Sign Language Learning Platform
 ```bash
 cd sign_app
 python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+Open [http://localhost:8000](http://localhost:8000) in your browser.

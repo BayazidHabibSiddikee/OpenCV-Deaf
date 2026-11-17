@@ -1,11 +1,43 @@
+# Python virtual environments & packages
+.venv/
+env/
+venv/
+
+# Python cache and compiled files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv/
-env/
-venv/
+
+# Large ML Weights & Incomplete Downloads
 *.incomplete
 model.safetensors
 *.bin
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# macOS / OS system files
 .DS_Store
+
+# IDE & Editor local settings
+.vscode/
+.idea/
+
+# Downloaded datasets and webcam test images
+data/raw/
+data/webcam_dev/
+data/webcam_test/
+data/feedback/
+
+# Model checkpoints
+models/*.pth
+models/*.pt
+
+# Allow the final pretrained CNN
+!models/feedback_candidate.pth
+
+# Downloaded MediaPipe model asset
+assets/*.task
