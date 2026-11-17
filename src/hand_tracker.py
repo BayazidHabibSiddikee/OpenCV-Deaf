@@ -1,11 +1,21 @@
 
 from pathlib import Path
-
+import os
 import cv2
 import mediapipe as mp
 
 
-MODEL_PATH = Path("assets/hand_landmarker.task")
+def resolve_model_path():
+    p1 = Path("assets/hand_landmarker.task")
+    if p1.exists():
+        return p1
+    p2 = Path(os.path.expanduser("~/.opencv/models/hand_landmarker.task"))
+    if p2.exists():
+        return p2
+    return p1
+
+
+MODEL_PATH = resolve_model_path()
 
 
 class HandTracker:

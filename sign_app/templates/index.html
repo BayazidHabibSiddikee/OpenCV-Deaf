@@ -3,70 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Sign Language Teacher - Learn signs using camera gesture detection with accessibility features for deaf, dumb, and hard-of-hearing users.">
-<title>Sign Language Teacher - MaixSense A075V</title>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg-body: #0b1120;
-  --bg-card: #172238;
-  --border-color: #334155;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --accent-cyan: #22d3ee;
-  --accent-blue: #3b82f6;
-  --accent-purple: #a855f7;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-}
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg-body);
-  color: var(--text-primary);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  line-height: 1.6;
-  padding: 20px;
-  transition: background 0.3s, color 0.3s;
-}
-body.high-contrast {
-  --bg-body: #000;
-  --bg-card: #111;
-  --border-color: #fff;
-  --text-primary: #fff;
-  --text-secondary: #ccc;
-  --accent-cyan: #fff;
-  --accent-blue: #ffd700;
-  --accent-purple: #ffd700;
-  --success: #00ff00;
-  --warning: #ffff00;
-  --danger: #ff0000;
-}
-body.high-contrast header h1 { color: #fff; }
-body.high-contrast .lesson-card:hover,
-body.high-contrast .card:hover { border-color: #fff; }
-header { text-align: center; margin-bottom: 24px; }
-header h1 { color: var(--accent-cyan); margin-bottom: 6px; word-break: break-word; }
-header p { color: var(--text-secondary); font-size: 0.95rem; }
-.container { max-width: 900px; margin: 0 auto; display: grid; gap: 18px; }
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 18px;
-}
-.card:focus-within { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); }
-.skip-link {
-  position: absolute; top: -100%; left: 0;
-  background: #fff; color: #000; padding: 8px 16px; z-index: 100;
-}
-.skip-link:focus { top: 0; }
-
+<title>SignFrame AI - Sign Language Communication & Teacher Platform</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg-body: #0b1120;
-  --bg-card: #172238;
-  --border-color: #334155;
+  --bg-card: #151f32;
+  --border-color: #27354f;
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
   --accent-cyan: #22d3ee;
@@ -76,821 +19,345 @@ header p { color: var(--text-secondary); font-size: 0.95rem; }
   --warning: #f59e0b;
   --danger: #ef4444;
 }
-html { scroll-behavior: smooth; }
 body {
   background: var(--bg-body);
   color: var(--text-primary);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  line-height: 1.6;
-  padding: 20px;
-  transition: background 0.3s, color 0.3s;
+  line-height: 1.5;
+  padding: 24px;
 }
-body.high-contrast {
-  --bg-body: #000;
-  --bg-card: #111;
-  --border-color: #fff;
-  --text-primary: #fff;
-  --text-secondary: #ccc;
-  --accent-cyan: #fff;
-  --accent-blue: #ffd700;
-  --accent-purple: #ffd700;
-  --success: #00ff00;
-  --warning: #ffff00;
-  --danger: #ff0000;
+header {
+  text-align: center;
+  margin-bottom: 24px;
 }
-body.high-contrast header h1 { color: #fff; }
-body.high-contrast .lesson-card:hover,
-body.high-contrast .card:hover { border-color: #fff; }
-header { text-align: center; margin-bottom: 24px; }
-header h1 { color: var(--accent-cyan); margin-bottom: 6px; word-break: break-word; }
-header p { color: var(--text-secondary); font-size: 0.95rem; }
-.container { max-width: 900px; margin: 0 auto; display: grid; gap: 18px; }
+header h1 {
+  color: var(--accent-cyan);
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 22px;
+}
+@media (max-width: 900px) {
+  .container { grid-template-columns: 1fr; }
+}
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
-.card:focus-within { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); }
-.skip-link {
-  position: absolute; top: -100%; left: 0;
-  background: #fff; color: #000; padding: 8px 16px; z-index: 100;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
 }
-.skip-link:focus { top: 0; }
-.video-card img {
-  width: 100%; max-width: 640px; height: auto;
-  background: #000; border-radius: 10px;
-  display: block; margin: 0 auto 12px auto;
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
-figcaption { background: #1e2d47; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--text-secondary); }
-.status { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+.camera-box {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4 / 3;
+}
+.camera-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.status-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
 .badge {
-  padding: 8px 16px; border-radius: 10px;
-  font-weight: 700; font-size: 1.05rem; white-space: nowrap;
-}
-.badge-g { background: var(--accent-cyan); color: #051525; }
-.badge-d { background: var(--accent-blue); color: #fff; }
-.badge-e { background: var(--accent-purple); color: #fff; }
-.badge:focus { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
-.feedback {
-  text-align: center; font-size: 1.1rem; height: 1.5rem;
-  margin-top: 6px; color: var(--text-secondary);
-}
-.feedback-captions {
-  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85); color: #fff;
-  padding: 8px 18px; border-radius: 20px;
-  font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px;
-  text-align: center; max-width: 90%; overflow-wrap: break-word;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-.feedback-captions[aria-hidden="true"] { opacity: 0; }
-.feedback.caption-active .feedback-captions { position: static; }
-.dist-bar { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-.dist-fill { height: 100%; background: var(--accent-cyan); width: 0%; transition: width 0.2s; }
-h2 { color: var(--accent-cyan); margin-bottom: 12px; }
-h3 { color: var(--accent-cyan); margin-bottom: 8px; }
-.lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.lesson-card {
-  background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 12px; padding: 14px; text-align: center;
-  cursor: pointer; transition: 0.2s;
-}
-.lesson-card:hover { border-color: var(--accent-cyan); background: #1e2d47; }
-.lesson-card:focus-within { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
-.lesson-card.active { border-color: var(--accent-cyan); background: #0b3442; }
-.lesson-emoji { font-size: 2.6rem; margin-bottom: 6px; display: block; }
-.lesson-name { font-weight: 700; font-size: 1rem; display: block; margin-bottom: 4px; }
-.lesson-hint { font-size: 0.78rem; color: var(--text-secondary); display: block; }
-.lesson-panel { text-align: center; }
-.target-emoji { font-size: 5rem; margin: 10px 0 6px 0; }
-.target-name { font-size: 1.5rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 4px; }
-.target-hint { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 14px; }
-.audio-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.audio-controls button {
-  padding: 10px 20px; border-radius: 10px; font-size: 1rem;
-  white-space: nowrap; cursor: pointer; border: none;
-}
-.audio-controls button:focus-visible {
-  outline: 2px solid var(--accent-cyan); outline-offset: 2px;
-}
-tts-indicator {
-  display: none;
-  align-items: center; gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-top: 8px;
-}
-tts-indicator.visible { display: flex; }
-tts-indicator .wave {
-  width: 80px; height: 4px; background: var(--accent-cyan);
-  border-radius: 2px; overflow: hidden;
-}
-tts-indicator .wave span {
-  display: block; height: 100%;
-  background: linear-gradient(90deg, var(--accent-cyan), #67e8f9);
-  border-radius: 2px;
-  animation: wave 0.8s ease-in-out infinite alternate;
-}
-tts-indicator.visible .wave span { animation-delay: 0s; }
-tts-indicator.visible .wave span:nth-child(2) { animation-delay: -0.2s; }
-tts-indicator.visible .wave span:nth-child(3) { animation-delay: -0.4s; }
-tts-indicator.visible .wave span:nth-child(4) { animation-delay: -0.6s; }
-@keyframes wave {
-  0% { height: 20%; }
-  100% { height: 100%; }
-}
-.access-controls {
-  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-  background: var(--bg-card);
+  font-weight: 600;
+  background: #1e293b;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.access-controls .control-group { margin-right: 8px; }
-.access-controls label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; }
-.access-controls select,
-.access-controls button {
-  background: #0b1120; color: var(--text-primary);
+.badge-asl { color: var(--accent-cyan); border-color: rgba(34, 211, 238, 0.4); }
+.badge-stable { color: #4ade80; border-color: rgba(74, 222, 128, 0.4); }
+.badge-dist { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
+.badge-emo { color: #f472b6; border-color: rgba(244, 114, 182, 0.4); }
+
+/* Text Composer & Communication Section */
+.composer-box {
+  background: #090e17;
   border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 8px 12px;
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 90px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  word-break: break-word;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+}
+.composer-placeholder {
+  color: #475569;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+button {
+  background: #1e293b;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 10px;
   font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-.access-controls select:focus,
-.access-controls button:focus-visible {
-  outline: 2px solid var(--accent-cyan); outline-offset: 2px;
+button:hover {
+  background: #334155;
+  border-color: var(--accent-cyan);
 }
-.access-controls .control-label { display: inline-block; width: 120px; color: var(--text-secondary); }
-.font-size-btn {
-  background: #0b1120; color: var(--text-primary);
+button.btn-primary {
+  background: #0284c7;
+  color: #fff;
+  border-color: #38bdf8;
+}
+button.btn-primary:hover { background: #0369a1; }
+button.btn-speak {
+  background: #15803d;
+  color: #fff;
+  border-color: #4ade80;
+}
+button.btn-speak:hover { background: #166534; }
+button.btn-danger {
+  background: #991b1b;
+  color: #fff;
+  border-color: #f87171;
+}
+button.btn-danger:hover { background: #7f1d1d; }
+
+/* Lesson Alphabet Grid */
+.alphabet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.sign-card {
+  background: #0f172a;
   border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 6px 10px;
-  font-size: 0.9rem; cursor: pointer;
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.font-size-btn.active { background: var(--accent-cyan); color: #051525; border-color: var(--accent-cyan); }
-.font-size-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
-@media (max-width: 640px) {
-  body { padding: 12px; }
-  .target-emoji { font-size: 4rem; }
-  .feedback-captions { font-size: 1.1rem; padding: 6px 12px; border-radius: 16px; }
-  .access-controls { flex-wrap: wrap; gap: 8px; }
-  .access-controls .control-label { display: block; margin-bottom: 4px; }
+.sign-card:hover, .sign-card.active {
+  border-color: var(--accent-cyan);
+  background: #1e293b;
+  transform: translateY(-2px);
 }
-@media print {
-  .access-controls, .skip-link, .no-print { display: none !important; }
-  body { background: #fff; color: #000; }
-  .card { background: #fff; border: 1px solid #000; color: #000; }
-  h2, h3 { color: #000; }
-  .target-emoji { font-size: 6rem; }
-}
+.sign-emoji { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+.sign-name { font-weight: 700; color: var(--text-primary); }
+.sign-hint { font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px; }
 
-.video-card img {
-  width: 100%; max-width: 640px; height: auto;
-  background: #000; border-radius: 10px;
-  display: block; margin: 0 auto 12px auto;
-}
-figcaption { background: #1e2d47; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--text-secondary); }
-.status { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
-.badge {
-  padding: 8px 16px; border-radius: 10px;
-  font-weight: 700; font-size: 1.05rem; white-space: nowrap;
-}
-.badge-g { background: var(--accent-cyan); color: #051525; }
-.badge-d { background: var(--accent-blue); color: #fff; }
-.badge-e { background: var(--accent-purple); color: #fff; }
-.badge:focus { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
-.feedback {
-  text-align: center; font-size: 1.1rem; height: 1.5rem;
-  margin-top: 6px; color: var(--text-secondary);
-}
-.feedback-captions {
-  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85); color: #fff;
-  padding: 8px 18px; border-radius: 20px;
-  font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px;
-  text-align: center; max-width: 90%; overflow-wrap: break-word;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-.feedback-captions[aria-hidden="true"] { opacity: 0; }
-.feedback.caption-active .feedback-captions { position: static; }
-.dist-bar { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-.dist-fill { height: 100%; background: var(--accent-cyan); width: 0%; transition: width 0.2s; }
-h2 { color: var(--accent-cyan); margin-bottom: 12px; }
-h3 { color: var(--accent-cyan); margin-bottom: 8px; }
-
-
-.lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.lesson-card {
-  background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 12px; padding: 14px; text-align: center;
-  cursor: pointer; transition: 0.2s;
-}
-.lesson-card:hover { border-color: var(--accent-cyan); background: #1e2d47; }
-.lesson-card:focus-within { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
-.lesson-card.active { border-color: var(--accent-cyan); background: #0b3442; }
-.lesson-emoji { font-size: 2.6rem; margin-bottom: 6px; display: block; }
-.lesson-name { font-weight: 700; font-size: 1rem; display: block; margin-bottom: 4px; }
-.lesson-hint { font-size: 0.78rem; color: var(--text-secondary); display: block; }
-.lesson-panel { text-align: center; }
-.target-emoji { font-size: 5rem; margin: 10px 0 6px 0; }
-.target-name { font-size: 1.5rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 4px; }
-.target-hint { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 14px; }
-
-
-.audio-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.audio-controls button {
-  padding: 10px 20px; border-radius: 10px; font-size: 1rem;
-  white-space: nowrap; cursor: pointer; border: none;
-}
-.audio-controls button:focus-visible {
-  outline: 2px solid var(--accent-cyan); outline-offset: 2px;
-}
-.tts-indicator {
-  display: none;
-  align-items: center; gap: 8px;
-  font-size: 0.85rem;
+.toast {
+  margin-top: 12px;
+  font-size: 0.88rem;
   color: var(--text-secondary);
-  margin-top: 8px;
-}
-.tts-indicator.visible { display: flex; }
-.tts-indicator .wave {
-  width: 80px; height: 4px; background: var(--accent-cyan);
-  border-radius: 2px; overflow: hidden;
-}
-.tts-indicator .wave span {
-  display: block; height: 100%;
-  background: linear-gradient(90deg, var(--accent-cyan), #67e8f9);
-  border-radius: 2px;
-  animation: wave 0.8s ease-in-out infinite alternate;
-}
-.tts-indicator.visible .wave span { animation-delay: 0s; }
-.tts-indicator.visible .wave span:nth-child(2) { animation-delay: -0.2s; }
-.tts-indicator.visible .wave span:nth-child(3) { animation-delay: -0.4s; }
-.tts-indicator.visible .wave span:nth-child(4) { animation-delay: -0.6s; }
-@keyframes wave {
-  0% { height: 20%; }
-  100% { height: 100%; }
-}
-
-
-.access-controls {
-  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-.access-controls .control-group { margin-right: 8px; }
-.access-controls label { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; }
-.access-controls select,
-.access-controls button {
-  background: #0b1120; color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 8px 12px;
-  font-size: 0.95rem;
-}
-.access-controls select:focus,
-.access-controls button:focus-visible {
-  outline: 2px solid var(--accent-cyan); outline-offset: 2px;
-}
-.access-controls .control-label { display: inline-block; width: 120px; color: var(--text-secondary); }
-.font-size-btn {
-  background: #0b1120; color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 6px 10px;
-  font-size: 0.9rem; cursor: pointer;
-}
-.font-size-btn.active { background: var(--accent-cyan); color: #051525; border-color: var(--accent-cyan); }
-.font-size-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
-@media (max-width: 640px) {
-  body { padding: 12px; }
-  .target-emoji { font-size: 4rem; }
-  .feedback-captions { font-size: 1.1rem; padding: 6px 12px; border-radius: 16px; }
-  .access-controls { flex-wrap: wrap; gap: 8px; }
-  .access-controls .control-label { display: block; margin-bottom: 4px; }
-}
-@media print {
-  .access-controls, .skip-link, .no-print { display: none !important; }
-  body { background: #fff; color: #000; }
-  .card { background: #fff; border: 1px solid #000; color: #000; }
-  h2, h3 { color: #000; }
-  .target-emoji { font-size: 6rem; }
+  text-align: center;
 }
 </style>
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
 
 <header>
-  <h1>Sign Language Teacher</h1>
-  <p>Sipeed MaixSense-A075V | RGB + Depth | FastAPI | Live feedback</p>
-  <nav class="access-controls no-print" aria-label="Accessibility controls">
-    <div class="control-group">
-      <span class="control-label">High Contrast</span>
-      <button id="contrastToggle" class="font-size-btn" aria-pressed="false" aria-label="Toggle high contrast mode">
-        High Contrast
-      </button>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Font Size</span>
-      <button id="fontSizeToggle" class="font-size-btn" aria-pressed="false" aria-label="Toggle font size">
-        Normal
-      </button>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Language</span>
-      <select id="languageSelect" aria-label="Select sign language">
-        <option value="en">ASL / English</option>
-        <option value="en-gb">BSL / English</option>
-        <option value="en-in">ISL / English</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Vibration</span>
-      <button id="vibrationToggle" class="font-size-btn" aria-pressed="true" aria-label="Toggle haptic feedback">
-        On
-      </button>
-    </div>
-  </nav>
+  <h1>SignFrame AI + OpenCV Vision Studio</h1>
+  <p>Real-Time ASL Fingerspelling (CNN) | 3D Depth Isolation | Emotion Telemetry | Offline Speech TTS</p>
 </header>
-<main>
+
 <div class="container">
-  <section class="card video-card" aria-labelledby="video-title">
-    <h2 id="video-title">Live Camera Feed</h2>
-    <img id="videoFeed" src="/video_feed" alt="Live camera feed showing your hand. Wave hello to start detecting gestures.">
-    <div class="status">
-      <div class="badge badge-g" id="gestureBadge" role="status" aria-live="polite">--</div>
-      <div class="badge badge-d" id="distanceBadge" role="status" aria-live="polite">-- m</div>
-      <div class="badge badge-e" id="emotionBadge" role="status" aria-live="polite">--</div>
+  <!-- Left Column: Video & Recognition Telemetry -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Live Vision Feed</div>
+      <div id="cameraSource" style="font-size: 0.85rem; color: var(--text-secondary);">Connecting camera...</div>
     </div>
-    <div class="feedback" id="feedback">Show your hand to the camera</div>
-    <div class="feedback-captions" id="captionElement" role="status" aria-live="polite"></div>
-    <div class="dist-bar"><div class="dist-fill" id="distFill"></div></div>
-    <figcaption>Camera feed from your RGB/Depth camera. Move within 0.5-2.0 m for best detection.</figcaption>
-  </section>
+    
+    <div class="camera-box">
+      <img src="/video_feed" alt="Real-time ASL camera stream">
+    </div>
 
-  <section class="card" aria-labelledby="lessons-title">
-    <h2 id="lessons-title">Learn a Sign</h2>
-    <div class="lessons" id="lessons"></div>
-    <div class="card audio-controls">
-      <button id="micBtn" class="badge badge-g" style="cursor:pointer;padding:10px 20px;border-radius:10px;font-size:1rem;white-space:nowrap;" aria-label="Start speaking. Tap to begin voice input.">
-        <span id="micIcon">[mic]</span> <span id="micLabel">Speak</span>
+    <div class="status-bar">
+      <div class="badge badge-asl" id="aslBadge">ASL: --</div>
+      <div class="badge badge-stable" id="stableBadge">STABLE: --</div>
+      <div class="badge badge-dist" id="distBadge">DIST: --</div>
+      <div class="badge badge-emo" id="emoBadge">FACE: --</div>
+    </div>
+
+    <div class="toast" id="hintToast">Hold an ASL letter steady to confirm it into text.</div>
+  </div>
+
+  <!-- Right Column: Assistive Communication & Text Composer -->
+  <div class="card" style="display: flex; flex-direction: column;">
+    <div class="card-header">
+      <div class="card-title">Message Composer & Text-to-Speech</div>
+    </div>
+
+    <div class="composer-box" id="composerDisplay">
+      <span class="composer-placeholder">Sign letters to build sentences here...</span>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn-primary" onclick="postAction('/compose/add_letter')">Add Letter</button>
+      <button onclick="postAction('/compose/space')">Space</button>
+      <button onclick="postAction('/compose/backspace')">Backspace</button>
+      <button class="btn-danger" onclick="postAction('/compose/clear')">Clear</button>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <button class="btn-speak" style="width: 100%; padding: 14px;" onclick="speakMessage()">
+        🔊 Speak Message (Text-to-Speech)
       </button>
-      <div id="signShadow" style="flex:1;text-align:center;padding:12px;">
-        <div id="signEmoji" style="font-size:4rem;margin-bottom:6px;">--</div>
-        <div id="signName" style="font-size:1.1rem;font-weight:700;color:var(--accent-cyan);">--</div>
-        <div id="signSub" style="font-size:0.8rem;color:var(--text-secondary);">Show a gesture or speak a word to see the matching sign</div>
-      </div>
     </div>
-  </section>
 
-  <section class="card lesson-panel" aria-labelledby="lesson-title">
-    <h2 id="lesson-title">Current Lesson</h2>
-    <div class="target-emoji" id="targetEmoji" aria-hidden="true">👋</div>
-    <div class="target-name" id="targetName">Hello</div>
-    <div class="target-hint" id="targetHint">Show an open palm - keep it within 0.5-1.5 m</div>
-    <div class="feedback" id="lessonFeedback" role="status">--</div>
-  </section>
+    <div class="card-header" style="margin-top: 24px;">
+      <div class="card-title">Interactive Sign Reference (24 Classes)</div>
+    </div>
+
+    <div class="alphabet-grid" id="lessonGrid">
+      <!-- Populated via Javascript -->
+    </div>
+  </div>
 </div>
-</main>
-<footer>
-  <p>
-    <a href="/games" class="back">Back to games</a> |
-    <a href="/reference" class="back">Sign Reference Card</a>
-  </p>
-</footer>
 
-</style>
-</head>
-<body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
-
-<header>
-  <h1>Sign Language Teacher</h1>
-  <p>Sipeed MaixSense-A075V | RGB + Depth | FastAPI | Live feedback</p>
-  <nav class="access-controls no-print" aria-label="Accessibility controls">
-    <div class="control-group">
-      <span class="control-label">High Contrast</span>
-      <button id="contrastToggle" class="font-size-btn" aria-pressed="false" aria-label="Toggle high contrast mode">
-        High Contrast
-      </button>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Font Size</span>
-      <button id="fontSizeToggle" class="font-size-btn" aria-pressed="false" aria-label="Toggle font size">
-        Normal
-      </button>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Language</span>
-      <select id="languageSelect" aria-label="Select sign language">
-        <option value="en">ASL / English</option>
-        <option value="en-gb">BSL / English</option>
-        <option value="en-in">ISL / English</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <span class="control-label">Vibration</span>
-      <button id="vibrationToggle" class="font-size-btn" aria-pressed="true" aria-label="Toggle haptic feedback">
-        On
-      </button>
-    </div>
-  </nav>
-</header>
-<main>
-<div class="container">
-  <section class="card video-card" aria-labelledby="video-title">
-    <h2 id="video-title">Live Camera Feed</h2>
-    <img id="videoFeed" src="/video_feed" alt="Live camera feed showing your hand. Wave hello to start detecting gestures.">
-    <div class="status">
-      <div class="badge badge-g" id="gestureBadge" role="status" aria-live="polite">--</div>
-      <div class="badge badge-d" id="distanceBadge" role="status" aria-live="polite">-- m</div>
-      <div class="badge badge-e" id="emotionBadge" role="status" aria-live="polite">--</div>
-    </div>
-    <div class="feedback" id="feedback">Show your hand to the camera</div>
-    <div class="feedback-captions" id="captionElement" role="status" aria-live="polite"></div>
-    <div class="dist-bar"><div class="dist-fill" id="distFill"></div></div>
-    <figcaption>Camera feed from your RGB/Depth camera. Move within 0.5-2.0 m for best detection.</figcaption>
-  </section>
-
-  <section class="card" aria-labelledby="lessons-title">
-    <h2 id="lessons-title">Learn a Sign</h2>
-    <div class="lessons" id="lessons"></div>
-    <div class="card audio-controls">
-      <button id="micBtn" class="badge badge-g" style="cursor:pointer;padding:10px 20px;border-radius:10px;font-size:1rem;white-space:nowrap;" aria-label="Start speaking. Tap to begin voice input.">
-        <span id="micIcon">[mic]</span> <span id="micLabel">Speak</span>
-      </button>
-      <div id="signShadow" style="flex:1;text-align:center;padding:12px;">
-        <div id="signEmoji" style="font-size:4rem;margin-bottom:6px;">--</div>
-        <div id="signName" style="font-size:1.1rem;font-weight:700;color:var(--accent-cyan);">--</div>
-        <div id="signSub" style="font-size:0.8rem;color:var(--text-secondary);">Show a gesture or speak a word to see the matching sign</div>
-      </div>
-    </div>
-  </section>
-
-  <section class="card lesson-panel" aria-labelledby="lesson-title">
-    <h2 id="lesson-title">Current Lesson</h2>
-    <div class="target-emoji" id="targetEmoji" aria-hidden="true">&#x1F44B;</div>
-    <div class="target-name" id="targetName">Hello</div>
-    <div class="target-hint" id="targetHint">Show an open palm - keep it within 0.5-1.5 m</div>
-    <div class="feedback" id="lessonFeedback" role="status">--</div>
-  </section>
-</div>
-</main>
-<footer>
-  <p>
-    <a href="/games" class="back">Back to games</a> |
-    <a href="/reference" class="back">Sign Reference Card</a>
-  </p>
-</footer>
 <script>
-const LANGUAGE_MAP = {
-  en: { name: "ASL / English", captionPrefix: "Detected sign", ttsLang: "en-US",
-    lessonNames: { Hello: "Hello", Yes: "Yes", No: "No", Peace: "Peace", One: "One", OK: "OK" },
-    gestureNames: { "Open Palm": "Open Palm", "Thumb Up": "Thumb Up", Fist: "Fist", Peace: "Peace", One: "One", OK: "OK" },
-    lessonHints: { Hello: "Show an open palm", Yes: "Thumbs up", No: "Make a fist", Peace: "Index and middle finger", One: "Index finger only", OK: "Thumb and index touch" } },
-  "en-gb": { name: "BSL / English", captionPrefix: "Sign detected", ttsLang: "en-GB",
-    lessonNames: { Hello: "Hello", Yes: "Yes", No: "No", Peace: "Peace", One: "One", OK: "OK" },
-    gestureNames: { "Open Palm": "Open Palm", "Thumb Up": "Thumb Up", Fist: "Fist", Peace: "Peace", One: "One", OK: "OK" },
-    lessonHints: { Hello: "Wave with palm", Yes: "Nod thumb up", No: "Nod fist side to side", Peace: "Peace sign", One: "Single finger up", OK: "OK circle" } },
-  "en-in": { name: "ISL / English", captionPrefix: "Sign detected", ttsLang: "en-IN",
-    lessonNames: { Hello: "Hello", Yes: "Yes", No: "No", Peace: "Peace", One: "One", OK: "OK" },
-    gestureNames: { "Open Palm": "Open Palm", "Thumb Up": "Thumb Up", Fist: "Fist", Peace: "Peace", One: "One", OK: "OK" },
-    lessonHints: { Hello: "Wave with open palm", Yes: "Thumbs up", No: "Fist side-to-side", Peace: "Peace sign", One: "Index finger up", OK: "OK circle" } }
-};
+const LESSONS = {{ lessons | tojson }};
 
-const state = {
-  currentLanguage: "en",
-  highContrast: false,
-  fontSize: "normal",
-  vibration: true,
-  currentLesson: "Hello",
-  currentGesture: "",
-  captionTimeout: null,
-  captionShown: false,
-  lastGesture: ""
-};
-
-const els = {
-  gestureBadge: document.getElementById("gestureBadge"),
-  distanceBadge: document.getElementById("distanceBadge"),
-  emotionBadge: document.getElementById("emotionBadge"),
-  feedback: document.getElementById("feedback"),
-  distFill: document.getElementById("distFill"),
-  targetEmoji: document.getElementById("targetEmoji"),
-  targetName: document.getElementById("targetName"),
-  targetHint: document.getElementById("targetHint"),
-  lessonFeedback: document.getElementById("lessonFeedback"),
-  signEmoji: document.getElementById("signEmoji"),
-  signName: document.getElementById("signName"),
-  signSub: document.getElementById("signSub"),
-  lessonsEl: document.getElementById("lessons"),
-  caption: document.getElementById("captionElement"),
-  micBtn: document.getElementById("micBtn"),
-  micIcon: document.getElementById("micIcon"),
-  micLabel: document.getElementById("micLabel"),
-  contrastToggle: document.getElementById("contrastToggle"),
-  fontSizeToggle: document.getElementById("fontSizeToggle"),
-  languageSelect: document.getElementById("languageSelect"),
-  vibrationToggle: document.getElementById("vibrationToggle")
-};
-
-function applyHighContrast(enabled) {
-  state.highContrast = enabled;
-  document.body.classList.toggle("high-contrast", enabled);
-  els.contrastToggle.textContent = enabled ? "High Contrast ON" : "High Contrast OFF";
-  els.contrastToggle.setAttribute("aria-pressed", enabled);
-  localStorage.setItem("slt_highContrast", enabled);
-}
-
-function applyFontSize(size) {
-  state.fontSize = size;
-  document.body.className = document.body.className.replace(/font-\w+/g, "");
-  if (size === "large") document.body.classList.add("font-large");
-  else if (size === "xlarge") document.body.classList.add("font-xlarge");
-  els.fontSizeToggle.textContent = size === "large" ? "Large" : size === "xlarge" ? "Extra Large" : "Normal";
-  els.fontSizeToggle.setAttribute("aria-pressed", size !== "normal");
-  localStorage.setItem("slt_fontSize", size);
-}
-
-function applyLanguage(lang) {
-  state.currentLanguage = lang;
-  els.languageSelect.value = lang;
-  if (state.captionShown) updateCaption();
-  localStorage.setItem("slt_language", lang);
-}
-
-function toggleVibration(on) {
-  state.vibration = on;
-  els.vibrationToggle.textContent = on ? "On" : "Off";
-  els.vibrationToggle.setAttribute("aria-pressed", on);
-  localStorage.setItem("slt_vibration", on);
-}
-
-function showCaption(text, duration) {
-  duration = duration || 2000;
-  if (!state.captionShown) {
-    els.caption.setAttribute("aria-hidden", "false");
-    state.captionShown = true;
-  }
-  els.caption.textContent = text;
-  els.feedback.classList.add("caption-active");
-  clearTimeout(state.captionTimeout);
-  state.captionTimeout = setTimeout(() => {
-    els.caption.setAttribute("aria-hidden", "true");
-    els.feedback.classList.remove("caption-active");
-    state.captionShown = false;
-  }, duration);
-}
-
-function updateCaption() {
-  const t = LANGUAGE_MAP[state.currentLanguage];
-  if (state.currentGesture) {
-    const label = t.captionPrefix || "Detected sign";
-    showCaption(label + ": " + state.currentGesture);
-  } else {
-    showCaption("Show your hand to the camera", 1500);
-  }
-}
-
-function showTtsVisualizer() {
-  const indicator = document.createElement("div");
-  indicator.className = "tts-indicator visible";
-  indicator.setAttribute("role", "status");
-  indicator.setAttribute("aria-live", "polite");
-  indicator.innerHTML =
-    '<span>Sound</span><span class="wave"><span></span><span></span><span></span><span></span></span><span>Playing audio</span>';
-  els.feedback.parentNode.insertBefore(indicator, els.feedback.nextSibling);
-  setTimeout(() => {
-    indicator.classList.remove("visible");
-    setTimeout(() => indicator.remove(), 400);
-  }, 3000);
-}
-
-function vibrate(pattern) {
-  if (typeof navigator !== "undefined" && navigator.vibrate && state.vibration) {
-    try { navigator.vibrate(pattern); } catch (e) {}
-  }
-}
-
-function renderLessons(lessons) {
-  lessons.forEach((l, i) => {
+function renderLessons() {
+  const grid = document.getElementById("lessonGrid");
+  grid.innerHTML = "";
+  LESSONS.forEach(l => {
     const card = document.createElement("div");
-    card.className = "lesson-card" + (i === 0 ? " active" : "");
-    card.setAttribute("tabindex", "0");
-    card.setAttribute("role", "button");
-    card.setAttribute("aria-pressed", i === 0 ? "true" : "false");
-    card.setAttribute("aria-label", l.name + ": " + l.hint);
-    card.innerHTML =
-      '<span class="lesson-emoji">' + l.emoji + '</span>' +
-      '<span class="lesson-name">' + l.name + '</span>' +
-      '<span class="lesson-hint">' + l.hint + '</span>';
-    card.addEventListener("click", () => selectLesson(l));
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectLesson(l); }
-    });
-    els.lessonsEl.appendChild(card);
+    card.className = "sign-card";
+    card.innerHTML = `
+      <span class="sign-emoji">${l.emoji}</span>
+      <div class="sign-name">Letter ${l.name}</div>
+      <div class="sign-hint">${l.hint}</div>
+    `;
+    grid.appendChild(card);
   });
 }
 
-function selectLesson(lesson) {
-  const cards = document.querySelectorAll(".lesson-card");
-  cards.forEach(c => {
-    c.classList.remove("active");
-    c.setAttribute("aria-pressed", "false");
-  });
-  const targetCard = Array.from(cards).find(c => c.dataset.lesson === JSON.stringify(lesson));
-  if (targetCard) {
-    targetCard.classList.add("active");
-    targetCard.setAttribute("aria-pressed", "true");
-  }
-  state.currentLesson = lesson.name;
-  els.targetEmoji.textContent = lesson.emoji;
-  els.targetName.textContent = lesson.name;
-  els.targetHint.textContent = lesson.hint;
-  els.lessonFeedback.textContent = "--";
-  updateCaption();
-  vibrate(50);
-}
-
-async function toggleMic() {
-  const btn = els.micBtn;
-  const icon = els.micIcon;
-  const label = els.micLabel;
-  if (btn.dataset.listening === "true") {
-    btn.dataset.listening = "";
-    icon.textContent = "[mic]";
-    label.textContent = "Speak";
-    btn.style.backgroundColor = "#22d3ee";
-    btn.setAttribute("aria-label", "Start speaking. Tap to begin voice input.");
-  } else {
-    btn.dataset.listening = "true";
-    icon.textContent = "[mic]";
-    label.textContent = "Listening...";
-    btn.style.backgroundColor = "#3b82f6";
-    btn.setAttribute("aria-label", "Listening for speech. Tap to stop.");
-    try {
-      const r = await fetch("/recognize_speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: LANGUAGE_MAP[state.currentLanguage].ttsLang })
-      });
-      const d = await r.json();
-      if (d.text) {
-        els.feedback.textContent = d.text;
-        els.feedback.style.color = "#22d3ee";
-        const t = LANGUAGE_MAP[state.currentLanguage];
-        showCaption("Recognized: " + d.text, 2500);
-        await showSpeechText(d.text);
-      } else {
-        els.feedback.textContent = "No speech detected";
-        els.feedback.style.color = "#f59e0b";
-        showCaption("No speech detected - show your hand or try again", 2000);
-      }
-    } catch (e) {
-      console.error(e);
-      els.feedback.textContent = "STT error";
-      els.feedback.style.color = "#ef4444";
-      showCaption("Speech-to-text error", 2000);
-    }
-  }
-}
-
-
-async function showSpeechText(text) {
-  const t = LANGUAGE_MAP[state.currentLanguage];
+async function postAction(url) {
   try {
-    const tts_r = await fetch("/tts_audio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: text, language: t.ttsLang })
-    });
-    const tts_d = await tts_r.json();
-    if (!tts_d.error) {
-      showTtsVisualizer();
-    } else {
-      console.warn("TTS error:", tts_d);
-    }
-  } catch (e) {
-    console.error("TTS request error:", e);
+    const res = await fetch(url, { method: "POST" });
+    const data = await res.json();
+    updateComposerUI(data.text);
+  } catch (err) {
+    console.error("Action error:", err);
   }
 }
 
-async function poll() {
+async function speakMessage() {
   try {
-    const r = await fetch("/gesture_data");
-    const d = await r.json();
-    const g = d.gesture || "No hand";
-    els.gestureBadge.textContent = g;
-    els.distanceBadge.textContent = d.distance !== null ? d.distance.toFixed(2) + " m" : "N/A";
-    const emo = d.emotion || "--";
-    const emoConf = d.emotion_conf || 0;
-    els.emotionBadge.textContent = emoConf > 0 ? emo + " (" + emoConf.toFixed(2) + ")" : emo;
-
-    state.currentGesture = g;
-    updateCaption();
-
-    if (d.distance !== null) {
-      const pct = Math.min(Math.max(d.distance / 2.0, 0), 1) * 100;
-      els.distFill.style.width = pct + "%";
-      els.distFill.style.background = d.distance < 0.4 ? "#ef4444" : (d.distance > 1.8 ? "#f59e0b" : "#22d3ee");
-    }
-
-    if (g === "No hand") {
-      els.feedback.textContent = "Show your hand to the camera";
-      els.feedback.style.color = "#94a3b8";
-      vibrate(0);
-    } else {
-      els.feedback.textContent = "Detected: " + g;
-      els.feedback.style.color = "#22d3ee";
-      if (state.vibration && state.currentGesture !== state.lastGesture) {
-        vibrate(80);
-      }
-      state.lastGesture = state.currentGesture;
-    }
-
-    const t = LANGUAGE_MAP[state.currentLanguage];
-    const lessonName = t.lessonNames[g] || g;
-    const gestureName = t.gestureNames[g] || g;
-    els.signEmoji.textContent = SIGN_EMOJI[g] || "--";
-    els.signName.textContent = lessonName;
-    els.signSub.textContent = "Detected sign shown above";
-  } catch (e) {
-    console.error(e);
+    const res = await fetch("/compose/speak", { method: "POST" });
+    const data = await res.json();
+    document.getElementById("hintToast").textContent = data.message || "Speaking...";
+  } catch (err) {
+    console.error("TTS error:", err);
   }
-  setTimeout(poll, 100);
 }
 
-const SIGN_EMOJI = {
-  "Hello": "👋", "Yes": "👍", "No": "✊", "Peace": "✌️", "One": "☝️",
-  "OK": "👌", "Three": "✌️", "Five": "✋", "Love": "❤️", "Thank You": "🙏",
-  "Please": "🙏", "Sorry": "😔", "Help": "🆘", "I Love You": "🤟",
-  "Stop": "✋", "Wait": "🕐", "Learn": "📚", "Teacher": "👩‍🏫", "Question": "❓"
-};
-
-function init() {
-  const savedLang = localStorage.getItem("slt_language") || "en";
-  const savedContrast = localStorage.getItem("slt_highContrast") === "true";
-  const savedSize = localStorage.getItem("slt_fontSize") || "normal";
-  const savedVib = localStorage.getItem("slt_vibration") !== "false";
-
-  applyLanguage(savedLang);
-  applyHighContrast(savedContrast);
-  applyFontSize(savedSize);
-  toggleVibration(savedVib);
-
-  const lessons = JSON.parse(document.getElementById("lessons").dataset.lessons || "[]");
-  if (lessons && lessons.length > 0) {
-    renderLessons(lessons);
+function updateComposerUI(text) {
+  const display = document.getElementById("composerDisplay");
+  if (text && text.trim().length > 0) {
+    display.innerHTML = text;
   } else {
-    const defaultLessons = [
-      {"name": "Hello", "emoji": "👋", "gesture": "Open Palm", "hint": "Show an open palm", "dist": [0.5, 1.5]},
-      {"name": "Yes", "emoji": "👍", "gesture": "Thumb Up", "hint": "Thumbs up", "dist": [0.5, 1.5]},
-      {"name": "No", "emoji": "✊", "gesture": "Fist", "hint": "Make a fist", "dist": [0.5, 1.5]},
-      {"name": "Peace", "emoji": "✌️", "gesture": "Peace", "hint": "Index and middle finger", "dist": [0.5, 1.5]},
-      {"name": "One", "emoji": "☝️", "gesture": "One", "hint": "Index finger only", "dist": [0.5, 1.5]},
-      {"name": "OK", "emoji": "👌", "gesture": "OK", "hint": "Thumb and index touch", "dist": [0.4, 1.2]}
-    ];
-    renderLessons(defaultLessons);
-    document.getElementById("lessons").dataset.lessons = JSON.stringify(defaultLessons);
+    display.innerHTML = '<span class="composer-placeholder">Sign letters to build sentences here...</span>';
   }
-
-  els.micBtn.addEventListener("click", toggleMic);
-  els.contrastToggle.addEventListener("click", () => applyHighContrast(!state.highContrast));
-  els.contrastToggle.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); applyHighContrast(!state.highContrast); }
-  });
-  els.fontSizeToggle.addEventListener("click", () => {
-    const sizes = ["normal", "large", "xlarge"];
-    const next = sizes[(sizes.indexOf(state.fontSize) + 1) % sizes.length];
-    applyFontSize(next);
-  });
-  els.fontSizeToggle.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const sizes = ["normal", "large", "xlarge"]; const next = sizes[(sizes.indexOf(state.fontSize) + 1) % sizes.length]; applyFontSize(next); }
-  });
-  els.languageSelect.addEventListener("change", (e) => applyLanguage(e.target.value));
-  els.vibrationToggle.addEventListener("click", () => toggleVibration(!state.vibration));
-  els.vibrationToggle.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleVibration(!state.vibration); }
-  });
-
-  updateCaption();
 }
 
-poll();
-document.getElementById("lessons").dataset.lessons = JSON.stringify([
-  {"name": "Hello", "emoji": "👋", "gesture": "Open Palm", "hint": "Show an open palm", "dist": [0.5, 1.5]},
-  {"name": "Yes", "emoji": "👍", "gesture": "Thumb Up", "hint": "Thumbs up", "dist": [0.5, 1.5]},
-  {"name": "No", "emoji": "✊", "gesture": "Fist", "hint": "Make a fist", "dist": [0.5, 1.5]},
-  {"name": "Peace", "emoji": "✌️", "gesture": "Peace", "hint": "Index and middle finger", "dist": [0.5, 1.5]},
-  {"name": "One", "emoji": "☝️", "gesture": "One", "hint": "Index finger only", "dist": [0.5, 1.5]},
-  {"name": "OK", "emoji": "👌", "gesture": "OK", "hint": "Thumb and index touch", "dist": [0.4, 1.2]}
-]);
-init();
+async function pollTelemetry() {
+  try {
+    const res = await fetch("/gesture_data");
+    const d = await res.json();
+
+    document.getElementById("cameraSource").textContent = d.camera_source || "Active";
+    
+    // ASL Letter
+    const aslTxt = d.asl_letter ? `${d.asl_letter} (${Math.round(d.asl_conf * 100)}%)` : "No Hand";
+    document.getElementById("aslBadge").textContent = `ASL: ${aslTxt}`;
+
+    // Stable Letter
+    const stableTxt = d.stable_letter ? `[${d.stable_letter}]` : "--";
+    document.getElementById("stableBadge").textContent = `CONFIRMED: ${stableTxt}`;
+
+    // Distance
+    const distTxt = d.distance !== null ? `${d.distance.toFixed(2)}m` : "--";
+    document.getElementById("distBadge").textContent = `DIST: ${distTxt}`;
+
+    // Emotion
+    const emoTxt = d.emotion ? `${d.emotion} (${Math.round((d.emotion_conf || 0) * 100)}%)` : "--";
+    document.getElementById("emoBadge").textContent = `FACE: ${emoTxt}`;
+
+    // Keep composer in sync
+    if (d.composed_text !== undefined) {
+      updateComposerUI(d.composed_text);
+    }
+  } catch (err) {
+    // Graceful poll retry
+  }
+}
+
+renderLessons();
+setInterval(pollTelemetry, 250);
+
+// Keyboard controls
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    postAction('/compose/add_letter');
+  } else if (e.key === " ") {
+    e.preventDefault();
+    postAction('/compose/space');
+  } else if (e.key === "Backspace") {
+    postAction('/compose/backspace');
+  } else if (e.key.toLowerCase() === "v") {
+    speakMessage();
+  }
+});
 </script>
+
 </body>
 </html>
-
-

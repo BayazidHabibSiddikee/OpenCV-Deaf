@@ -38,6 +38,9 @@ class SpeechEngine:
             elif shutil.which("spd-say"):
                 command = ["spd-say", "-w", message]
 
+            elif shutil.which("espeak-ng"):
+                command = ["espeak-ng", message]
+
             elif shutil.which("espeak"):
                 command = ["espeak", message]
 
