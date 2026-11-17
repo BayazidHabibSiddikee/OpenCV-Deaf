@@ -1,4 +1,5 @@
 
+import os
 from pathlib import Path
 
 import torch
@@ -7,7 +8,17 @@ from src.model import SignLanguageCNN
 from src.dataset import VALID_LABELS
 
 
-MODEL_PATH = Path("models/feedback_candidate.pth")
+def resolve_model_path():
+    candidate_1 = Path("models/feedback_candidate.pth")
+    if candidate_1.exists():
+        return candidate_1
+    candidate_2 = Path(os.path.join(os.path.dirname(__file__), "..", "models", "feedback_candidate.pth")).resolve()
+    if candidate_2.exists():
+        return candidate_2
+    return candidate_1
+
+
+MODEL_PATH = resolve_model_path()
 
 
 class SignPredictor:
