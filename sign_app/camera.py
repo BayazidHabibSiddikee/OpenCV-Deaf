@@ -1,10 +1,11 @@
 """
-Enhanced Camera Processor:
-- Dual Camera Support: Sipeed MaixSense-A075V (ToF RGB-D) with seamless fallback to Local Webcam (index 0).
-- SignFrame AI Integration: Real-time 24-letter ASL fingerspelling recognition via PyTorch CNN.
-- 3D Depth Isolation: Background noise removal when ToF camera is connected.
-- Facial Emotion Detection: YuNet + FER+ ONNX runtime.
-- Background Thread Loop: Singleton design to prevent OOM/re-instantiation.
+Ensemble Multi-Modal Sign & Gesture Detection Engine
+Combines:
+  1. MediaPipe 21 3D Joint Tracking (with CLAHE contrast normalization)
+  2. 3D ToF Geometric Convexity & Solidity Segmentation (runs on depth silhouettes when lighting is dim)
+  3. SignFrame AI PyTorch CNN (24-class ASL letter fingerspelling)
+  4. YuNet + FER+ Facial Emotion Recognition
+  5. Fallback Multi-Hand Blob Analyzer
 """
 
 import os
@@ -16,7 +17,6 @@ import cv2
 import numpy as np
 import requests
 
-# Set search paths
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -35,7 +35,6 @@ class CameraProcessor:
     _lock_init = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
-        """Thread-safe Singleton so FastAPI endpoints share a single camera pipeline."""
         with cls._lock_init:
             if cls._instance is None:
                 cls._instance = super(CameraProcessor, cls).__new__(cls)
@@ -79,13 +78,11 @@ class CameraProcessor:
         self.composer = TextComposer()
         self.speech = SpeechEngine()
 
-        # Local webcam fallback
         self._local_cap = None
         self._a075v_online = False
         self._initialized = True
 
     def init_a075v(self):
-        """Send initialization packet to MaixSense-A075V if reachable."""
         try:
             cfg = struct.pack("<BBBBBBBBi", 1, 0, 255, 0, 2, 7, 1, 0, 0)
             requests.post(f"{self.base_url}/set_cfg", data=cfg, timeout=1.0)
@@ -96,7 +93,6 @@ class CameraProcessor:
             return False
 
     def fetch_a075v_frames(self):
-        """Fetch depth and RGB from A075V getdeep endpoint."""
         try:
             resp = requests.get(f"{self.base_url}/getdeep", timeout=1.2)
             data = resp.content
@@ -131,13 +127,14 @@ class CameraProcessor:
         return None, None
 
     def fetch_frames(self):
-        """Try A075V ToF camera first; smoothly fallback to local USB/integrated webcam."""
         depth, rgb = self.fetch_a075v_frames()
         if rgb is not None:
             self.camera_source = "MaixSense-A075V (ToF RGB-D)"
+            if self._local_cap is not None:
+                self._local_cap.release()
+                self._local_cap = None
             return depth, rgb
 
-        # Fallback to local webcam
         self.camera_source = "Webcam (Local Video0)"
         if self._local_cap is None or not self._local_cap.isOpened():
             self._local_cap = cv2.VideoCapture(0)
@@ -151,24 +148,70 @@ class CameraProcessor:
 
         return None, None
 
-    def isolate_depth_foreground(self, rgb, depth, depth_window_mm=130):
-        """Slice foreground hand silhouette using 3D millimeter depth map."""
-        if depth is None:
-            return rgb
+    @staticmethod
+    def enhance_contrast(bgr):
+        lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        l = cv2.createCLAHE(clipLimit=2.4, tileGridSize=(8, 8)).apply(l)
+        return cv2.cvtColor(cv2.merge((l, a, b)), cv2.COLOR_LAB2BGR)
 
-        vh, vw = rgb.shape[:2]
+    def detect_depth_hand_contour(self, depth, vh, vw, max_dist_mm=1600):
+        """Pipeline 2: 3D ToF Depth Segmentation (Works even in complete darkness or monochrome)"""
+        if depth is None or depth.dtype != np.uint16:
+            return None, None, None
+
         d_res = cv2.resize(depth, (vw, vh), interpolation=cv2.INTER_NEAREST)
-        valid = (d_res > 100) & (d_res < 2000)
+        valid = (d_res > 80) & (d_res < max_dist_mm)
         if not np.any(valid):
-            return rgb
+            return None, None, None
 
         d_min = np.min(d_res[valid])
-        fg_mask = (d_res >= d_min) & (d_res <= (d_min + depth_window_mm))
-        fg_mask_u8 = (fg_mask * 255).astype(np.uint8)
+        # Isolate foreground slice (14 cm window)
+        fg = ((d_res >= d_min) & (d_res <= (d_min + 140))).astype(np.uint8) * 255
 
-        # Apply mask to clean background clutter
-        isolated = cv2.bitwise_and(rgb, rgb, mask=fg_mask_u8)
-        return isolated
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, kernel)
+
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(fg)
+        best_cnt = None
+        best_area = 0
+        best_cx, best_cy = 0, 0
+        dist_m = float(d_min) / 1000.0
+
+        for lbl in range(1, num_labels):
+            area = stats[lbl, cv2.CC_STAT_AREA]
+            if area < 600:
+                continue
+            comp = (labels == lbl).astype(np.uint8) * 255
+            contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                c = max(contours, key=cv2.contourArea)
+                if area > best_area:
+                    best_area = area
+                    best_cnt = c
+                    best_cx = int(centroids[lbl][0])
+                    best_cy = int(centroids[lbl][1])
+
+        if best_cnt is not None:
+            # Analyze contour convexity & shape
+            hull = cv2.convexHull(best_cnt, returnPoints=False)
+            valleys = 0
+            if hull is not None and len(hull) >= 4:
+                try:
+                    defects = cv2.convexityDefects(best_cnt, hull)
+                    if defects is not None:
+                        for s, e, f, d in defects.reshape(-1, 4):
+                            if (d / 256.0) > 12.0:
+                                valleys += 1
+                except Exception:
+                    pass
+
+            fingers = min(valleys + 1, 5) if valleys > 0 else 0
+            label_map = {0: "A (Fist)", 1: "D / 1", 2: "V / Peace", 3: "W / Three", 4: "B / 4", 5: "Hello / 5"}
+            gesture = label_map.get(fingers, f"{fingers} Fingers")
+            return best_cnt, gesture, dist_m
+
+        return None, None, None
 
     def loop(self):
         self.init_a075v()
@@ -181,6 +224,7 @@ class CameraProcessor:
 
             vh, vw = rgb.shape[:2]
             output = rgb.copy()
+            enhanced = self.enhance_contrast(rgb)
 
             asl_letter = None
             asl_conf = 0.0
@@ -189,7 +233,9 @@ class CameraProcessor:
             emotion = None
             emotion_conf = None
 
-            # 1. Face Emotion Detection (YuNet + FER+)
+            # -------------------------------------------------------------
+            # Process 1: Facial Emotion Detection (YuNet + FER+)
+            # -------------------------------------------------------------
             try:
                 emo, conf, face_box = self.emotion_detector.detect(rgb)
                 if emo is not None:
@@ -204,16 +250,17 @@ class CameraProcessor:
             except Exception:
                 pass
 
-            # 2. Hand Detection & SignFrame AI ASL Prediction
-            clean_input = rgb
-            if depth is not None:
-                # Use ToF depth foreground isolation to eliminate background bleed
-                clean_input = self.isolate_depth_foreground(rgb, depth)
+            # -------------------------------------------------------------
+            # Process 2: MediaPipe 3D Landmark + PyTorch CNN Detection
+            # -------------------------------------------------------------
+            landmarks = self.hand_tracker.detect(enhanced)
+            if not landmarks:
+                # Try raw RGB
+                landmarks = self.hand_tracker.detect(rgb)
 
-            landmarks = self.hand_tracker.detect(clean_input)
             if landmarks:
-                bbox = get_hand_bbox(landmarks, clean_input.shape)
-                image_tensor = preprocess_hand(clean_input, bbox)
+                bbox = get_hand_bbox(landmarks, rgb.shape)
+                image_tensor = preprocess_hand(rgb, bbox)
 
                 if image_tensor is not None:
                     asl_letter, asl_conf = self.asl_predictor.predict(image_tensor)
@@ -221,14 +268,13 @@ class CameraProcessor:
                 else:
                     self.stabilizer.reset()
 
-                # Visual overlay on hand
+                # Overlay skeleton
                 x1, y1, x2, y2 = bbox
                 cv2.rectangle(output, (x1, y1), (x2, y2), (0, 255, 200), 2)
                 for pt in landmarks:
                     px, py = int(pt.x * vw), int(pt.y * vh)
                     cv2.circle(output, (px, py), 3, (255, 255, 255), -1)
 
-                # Distance estimation if depth available
                 if depth is not None:
                     cx = int((x1 + x2) / 2)
                     cy = int((y1 + y2) / 2)
@@ -238,7 +284,7 @@ class CameraProcessor:
                     if valid.size > 0:
                         distance = float(np.median(valid)) / 1000.0
 
-                label_str = f"ASL: {asl_letter} ({int(asl_conf * 100)}%)"
+                label_str = f"ASL CNN: {asl_letter} ({int(asl_conf * 100)}%)"
                 if stable_letter:
                     label_str += f" -> [{stable_letter}]"
                 if distance:
@@ -246,10 +292,27 @@ class CameraProcessor:
 
                 cv2.putText(output, label_str, (max(8, x1), max(20, y1 - 10)),
                             cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 255, 200), 2)
+
             else:
                 self.stabilizer.reset()
 
-            # Status watermark
+                # -------------------------------------------------------------
+                # Process 3: 3D ToF Depth Foreground Contour Segmentation
+                # (Active when MediaPipe struggles due to low lighting or monochrome)
+                # -------------------------------------------------------------
+                if depth is not None:
+                    hand_cnt, depth_gest, d_meter = self.detect_depth_hand_contour(depth, vh, vw)
+                    if hand_cnt is not None:
+                        cv2.drawContours(output, [hand_cnt], -1, (0, 230, 255), 2)
+                        x, y, w, h = cv2.boundingRect(hand_cnt)
+                        distance = d_meter
+                        asl_letter = depth_gest
+                        asl_conf = 0.85
+                        label_str = f"ToF 3D: {depth_gest} | {distance:.2f}m"
+                        cv2.putText(output, label_str, (max(8, x), max(20, y - 10)),
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 230, 255), 2)
+
+            # Camera watermark
             cv2.putText(output, f"Source: {self.camera_source}", (10, vh - 12),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
 
