@@ -255,9 +255,6 @@ class CameraProcessor:
                 pass
 
             # -------------------------------------------------------------
-            # Process 2: MediaPipe 3D Landmark + PyTorch CNN Detection
-            # -------------------------------------------------------------
-            # -------------------------------------------------------------
             # Auxiliary Views: 3D ToF Depth Map & Black-and-White Mask
             # -------------------------------------------------------------
             depth_vis = None
@@ -267,6 +264,14 @@ class CameraProcessor:
             if depth is not None:
                 d_norm = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
                 depth_vis = cv2.applyColorMap(d_norm, cv2.COLORMAP_JET)
+
+            # -------------------------------------------------------------
+            # Process 2: MediaPipe 3D Landmark + PyTorch CNN Detection
+            # -------------------------------------------------------------
+            landmarks = self.hand_tracker.detect(enhanced)
+            if not landmarks:
+                # Try raw RGB
+                landmarks = self.hand_tracker.detect(rgb)
 
             if landmarks:
                 bbox = get_hand_bbox(landmarks, rgb.shape)
