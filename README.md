@@ -152,13 +152,13 @@ pip install opencv-contrib-python mediapipe requests onnxruntime pyautogui
 #### A. FastAPI Sign Language Learning Platform (Recommended)
 ```bash
 cd sign_app
-/home/bayazid/.opencv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 #### B. ASL Fingerspelling & Text-to-Speech (Desktop Window)
 ```bash
-/home/bayazid/.opencv/bin/python3 src/webcam_app.py
+python3 src/webcam_app.py
 ```
 - Hold an ASL hand sign in front of your camera.
 - The stabilized prediction confirms letters into the message box.
@@ -166,6 +166,6 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 #### C. Hugging Face SigLIP-2 Vision Studio (A075V / ToF Camera)
 ```bash
-/home/bayazid/.opencv/bin/python3 hf_siglip_studio.py
+python3 hf_siglip_studio.py
 ```
 Recognizes 14+ expressive gestures and 8 facial emotions zero-shot with metric millimeter depth estimation.
