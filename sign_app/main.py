@@ -81,6 +81,40 @@ async def video_feed():
     )
 
 
+@app.get("/depth_feed")
+async def depth_feed():
+    def generate():
+        while True:
+            jpg = processor.get_depth_jpeg()
+            if jpg is None:
+                time.sleep(0.05)
+                continue
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+            time.sleep(0.04)
+
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+
+@app.get("/mask_feed")
+async def mask_feed():
+    def generate():
+        while True:
+            jpg = processor.get_mask_jpeg()
+            if jpg is None:
+                time.sleep(0.05)
+                continue
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+            time.sleep(0.04)
+
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+
 @app.get("/gesture_data")
 async def gesture_data():
     return JSONResponse(processor.get_data())
@@ -90,6 +124,12 @@ async def gesture_data():
 async def compose_add_letter():
     text = processor.add_stable_letter()
     return JSONResponse({"text": text, "status": "added"})
+
+
+@app.post("/compose/add_character/{char}")
+async def compose_add_char(char: str):
+    text = processor.add_letter(char)
+    return JSONResponse({"text": text, "status": "added", "char": char})
 
 
 @app.post("/compose/space")

@@ -54,6 +54,8 @@ class CameraProcessor:
 
         self._lock = threading.Lock()
         self.latest_frame = None
+        self.latest_depth_frame = None
+        self.latest_mask_frame = None
         self.latest_gesture = "No hand"
         self.latest_distance = None
         self.latest_handedness = "Unknown"
@@ -64,6 +66,8 @@ class CameraProcessor:
         self.latest_asl_letter = None
         self.latest_asl_conf = 0.0
         self.latest_stable_letter = None
+        self.last_committed_letter = None
+        self.stable_letter_start_time = 0.0
         self.composed_text = ""
         self.camera_source = "Detecting..."
 
@@ -158,12 +162,12 @@ class CameraProcessor:
     def detect_depth_hand_contour(self, depth, vh, vw, max_dist_mm=1600):
         """Pipeline 2: 3D ToF Depth Segmentation (Works even in complete darkness or monochrome)"""
         if depth is None or depth.dtype != np.uint16:
-            return None, None, None
+            return None, None, None, None
 
         d_res = cv2.resize(depth, (vw, vh), interpolation=cv2.INTER_NEAREST)
         valid = (d_res > 80) & (d_res < max_dist_mm)
         if not np.any(valid):
-            return None, None, None
+            return None, None, None, np.zeros((vh, vw), dtype=np.uint8)
 
         d_min = np.min(d_res[valid])
         # Isolate foreground slice (14 cm window)
@@ -209,9 +213,9 @@ class CameraProcessor:
             fingers = min(valleys + 1, 5) if valleys > 0 else 0
             label_map = {0: "A (Fist)", 1: "D / 1", 2: "V / Peace", 3: "W / Three", 4: "B / 4", 5: "Hello / 5"}
             gesture = label_map.get(fingers, f"{fingers} Fingers")
-            return best_cnt, gesture, dist_m
+            return best_cnt, gesture, dist_m, fg
 
-        return None, None, None
+        return None, None, None, fg
 
     def loop(self):
         self.init_a075v()
@@ -253,10 +257,16 @@ class CameraProcessor:
             # -------------------------------------------------------------
             # Process 2: MediaPipe 3D Landmark + PyTorch CNN Detection
             # -------------------------------------------------------------
-            landmarks = self.hand_tracker.detect(enhanced)
-            if not landmarks:
-                # Try raw RGB
-                landmarks = self.hand_tracker.detect(rgb)
+            # -------------------------------------------------------------
+            # Auxiliary Views: 3D ToF Depth Map & Black-and-White Mask
+            # -------------------------------------------------------------
+            depth_vis = None
+            bw_mask = None
+            fg_mask = None
+
+            if depth is not None:
+                d_norm = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                depth_vis = cv2.applyColorMap(d_norm, cv2.COLORMAP_JET)
 
             if landmarks:
                 bbox = get_hand_bbox(landmarks, rgb.shape)
@@ -274,6 +284,14 @@ class CameraProcessor:
                 for pt in landmarks:
                     px, py = int(pt.x * vw), int(pt.y * vh)
                     cv2.circle(output, (px, py), 3, (255, 255, 255), -1)
+
+                # Generate B&W skin / hand threshold mask for the hand region
+                hand_roi = rgb[max(0, y1):min(vh, y2), max(0, x1):min(vw, x2)]
+                bw_mask = np.zeros((vh, vw), dtype=np.uint8)
+                if hand_roi.size > 0:
+                    hsv_roi = cv2.cvtColor(hand_roi, cv2.COLOR_BGR2HSV)
+                    roi_mask = cv2.inRange(hsv_roi, np.array([0, 20, 70]), np.array([25, 255, 255]))
+                    bw_mask[max(0, y1):min(vh, y2), max(0, x1):min(vw, x2)] = roi_mask
 
                 if depth is not None:
                     cx = int((x1 + x2) / 2)
@@ -301,7 +319,8 @@ class CameraProcessor:
                 # (Active when MediaPipe struggles due to low lighting or monochrome)
                 # -------------------------------------------------------------
                 if depth is not None:
-                    hand_cnt, depth_gest, d_meter = self.detect_depth_hand_contour(depth, vh, vw)
+                    hand_cnt, depth_gest, d_meter, fg_mask = self.detect_depth_hand_contour(depth, vh, vw)
+                    bw_mask = fg_mask
                     if hand_cnt is not None:
                         cv2.drawContours(output, [hand_cnt], -1, (0, 230, 255), 2)
                         x, y, w, h = cv2.boundingRect(hand_cnt)
@@ -312,12 +331,42 @@ class CameraProcessor:
                         cv2.putText(output, label_str, (max(8, x), max(20, y - 10)),
                                     cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 230, 255), 2)
 
+            # Fallbacks for auxiliary visualizers if depth or mask is None
+            if depth_vis is None:
+                # Simulated/derived depth visualization from grayscale gradient
+                gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+                depth_vis = cv2.applyColorMap(cv2.equalizeHist(gray), cv2.COLORMAP_JET)
+
+            if bw_mask is None:
+                # Background subtraction / Otsu skin binary mask
+                gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+                _, bw_mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            # Auto-commit stable letters into composer
+            # If the user holds a stable sign for > 0.8s without changing, append to composer!
+            now = time.time()
+            if stable_letter:
+                if stable_letter != self.last_committed_letter:
+                    if self.stable_letter_start_time == 0.0:
+                        self.stable_letter_start_time = now
+                    elif (now - self.stable_letter_start_time) >= 0.8:
+                        self.composer.append_letter(stable_letter)
+                        self.last_committed_letter = stable_letter
+                        self.stable_letter_start_time = 0.0
+                else:
+                    self.stable_letter_start_time = 0.0
+            else:
+                self.stable_letter_start_time = 0.0
+                self.last_committed_letter = None
+
             # Camera watermark
             cv2.putText(output, f"Source: {self.camera_source}", (10, vh - 12),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
 
             with self._lock:
                 self.latest_frame = output
+                self.latest_depth_frame = depth_vis
+                self.latest_mask_frame = bw_mask
                 self.latest_gesture = stable_letter or asl_letter or "No hand"
                 self.latest_asl_letter = asl_letter
                 self.latest_asl_conf = asl_conf
@@ -351,6 +400,22 @@ class CameraProcessor:
         ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
         return buf.tobytes() if ok else None
 
+    def get_depth_jpeg(self):
+        with self._lock:
+            frame = self.latest_depth_frame
+        if frame is None:
+            return None
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        return buf.tobytes() if ok else None
+
+    def get_mask_jpeg(self):
+        with self._lock:
+            frame = self.latest_mask_frame
+        if frame is None:
+            return None
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        return buf.tobytes() if ok else None
+
     def get_data(self):
         with self._lock:
             return {
@@ -361,16 +426,22 @@ class CameraProcessor:
                 "distance": self.latest_distance,
                 "emotion": self.latest_emotion,
                 "emotion_conf": self.latest_emotion_conf,
-                "composed_text": self.composed_text,
+                "composed_text": self.composer.text,
                 "camera_source": self.camera_source,
             }
 
     def add_stable_letter(self):
         with self._lock:
             if self.latest_stable_letter:
-                self.composer.add_letter(self.latest_stable_letter)
+                self.composer.append_letter(self.latest_stable_letter)
                 return self.composer.text
         return self.composer.text
+
+    def add_letter(self, letter):
+        with self._lock:
+            if letter:
+                self.composer.append_letter(letter)
+            return self.composer.text
 
     def add_space(self):
         with self._lock:

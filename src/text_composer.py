@@ -7,6 +7,9 @@ class TextComposer:
         if letter:
             self.text += letter
 
+    # Alias for flexibility
+    add_letter = append_letter
+
     def add_space(self):
         self.text += " "
 
@@ -15,3 +18,4 @@ class TextComposer:
 
     def clear(self):
         self.text = ""
+

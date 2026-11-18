@@ -5,9 +5,9 @@ from collections import Counter, deque
 class PredictionStabilizer:
     def __init__(
         self,
-        window_size=12,
-        required_votes=9,
-        confidence_threshold=0.65
+        window_size=10,
+        required_votes=6,
+        confidence_threshold=0.50
     ):
         self.history = deque(maxlen=window_size)
         self.required_votes = required_votes
